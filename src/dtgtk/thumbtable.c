@@ -1396,26 +1396,28 @@ static gboolean _do_select_single(gpointer user_data)
   return FALSE;
 }
 
-static gboolean _event_button_press(GtkWidget *widget,
-                                    GdkEventButton *event,
-                                    dt_thumbtable_t *table)
+static gboolean _event_button_press_primary(
+    GtkGestureMultiPress *gesture,
+    int n_press,
+    double x,
+    double y,
+    dt_thumbtable_t *table)
 {
   dt_set_backthumb_time(0.0);
 
   const dt_imgid_t id = dt_control_get_mouse_over_id();
 
   if(dt_is_valid_imgid(id)
-     && event->button == 1)
+     && n_press == 2)
   {
-    //  double-click
-    if(event->type == GDK_2BUTTON_PRESS)
+    if (n_press == 2)
     {
       switch(table->mode)
       {
         case DT_THUMBTABLE_MODE_FILEMANAGER:
         case DT_THUMBTABLE_MODE_ZOOM:
           dt_view_manager_switch(darktable.view_manager, "darkroom");
-          break;
+        break;
 
         case DT_THUMBTABLE_MODE_FILMSTRIP:
           if(dt_view_get_current() == DT_VIEW_DARKROOM)
@@ -1439,22 +1441,22 @@ static gboolean _event_button_press(GtkWidget *widget,
       }
     }
 
-    if(event->button == 1
-       && event->type == GDK_BUTTON_PRESS
-       && table->mode == DT_THUMBTABLE_MODE_FILMSTRIP)
+    if (n_press == 1
+        && table->mode == DT_THUMBTABLE_MODE_FILMSTRIP)
+    {
       return FALSE;
+    }
   }
 
-  if(event->button == 1 && event->type == GDK_BUTTON_PRESS)
+  if (n_press == 1)
   {
     // make sure any edition field loses the focus
     gtk_widget_grab_focus(dt_ui_center(darktable.gui->ui));
   }
 
-  if(table->mode != DT_THUMBTABLE_MODE_ZOOM
+  if (table->mode != DT_THUMBTABLE_MODE_ZOOM
      && !dt_is_valid_imgid(id)
-     && event->button == 1
-     && event->type == GDK_BUTTON_PRESS)
+     && n_press == 1)
   {
     const dt_view_type_flags_t cv = dt_view_get_current();
 
@@ -1514,9 +1516,12 @@ static gboolean _event_motion_notify(GtkWidget *widget,
   return ret;
 }
 
-static gboolean _event_button_release(GtkWidget *widget,
-                                      GdkEventButton *event,
-                                      dt_thumbtable_t *table)
+static gboolean _event_button_release_primary(
+    GtkGestureMultiPress *gesture,
+    int n_press,
+    double x,
+    double y,
+    dt_thumbtable_t *table)
 {
   // we select only in LIGHTTABLE, DARKROOM & MAP mode
   const dt_view_type_flags_t cv = dt_view_get_current();
@@ -1529,16 +1534,18 @@ static gboolean _event_button_release(GtkWidget *widget,
   dt_set_backthumb_time(0.0);
   const dt_imgid_t id = dt_control_get_mouse_over_id();
 
-  if(dt_is_valid_imgid(id)
-     && event->button == 1
-     && event->type == GDK_BUTTON_RELEASE)
+  // get current state from the event to get the modifier keys
+  GdkModifierType state;
+  gtk_get_current_event_state(&state);
+
+  if(dt_is_valid_imgid(id))
   {
-    if(dt_modifier_is(event->state, GDK_CONTROL_MASK)
-       || dt_modifier_is(event->state, GDK_MOD2_MASK)) // CMD key on macOS
+    if(dt_modifier_is(state, GDK_CONTROL_MASK)
+       || dt_modifier_is(state, GDK_MOD2_MASK)) // CMD key on macOS
     {
       dt_selection_toggle(darktable.selection, id);
     }
-    else if(dt_modifier_is(event->state, GDK_SHIFT_MASK))
+    else if(dt_modifier_is(state, GDK_SHIFT_MASK))
     {
       dt_selection_select_range(darktable.selection, id);
     }
@@ -2448,12 +2455,15 @@ dt_thumbtable_t *dt_thumbtable_new()
                    G_CALLBACK(_event_leave_notify), table);
   g_signal_connect(G_OBJECT(table->widget), "enter-notify-event",
                    G_CALLBACK(_event_enter_notify), table);
-  g_signal_connect(G_OBJECT(table->widget), "button-press-event",
-                   G_CALLBACK(_event_button_press), table);
   g_signal_connect(G_OBJECT(table->widget), "motion-notify-event",
                    G_CALLBACK(_event_motion_notify), table);
-  g_signal_connect(G_OBJECT(table->widget), "button-release-event",
-                   G_CALLBACK(_event_button_release), table);
+
+  table->gesture_button_primary = dtgtk_button_default_handler_new(
+      GTK_WIDGET(table->widget),
+      GDK_BUTTON_PRIMARY,
+      G_CALLBACK(_event_button_press_primary),
+      G_CALLBACK(_event_button_release_primary),
+      table);
 
   // we register globals signals
   DT_CONTROL_SIGNAL_CONNECT(DT_SIGNAL_COLLECTION_CHANGED, _dt_collection_changed_callback, table);

@@ -106,6 +106,9 @@ typedef struct dt_thumbtable_t
   guint scroll_timeout_id;
   float scroll_value;
 
+  // different controller for event processing
+  GtkGesture *gesture_button_primary;
+
   // darkroom selection from filmstrip (support for single & double click)
   guint sel_single_cb;
   dt_imgid_t to_selid;
