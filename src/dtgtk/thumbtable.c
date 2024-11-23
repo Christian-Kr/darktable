@@ -1473,8 +1473,8 @@ static gboolean _event_button_press_primary(
     }
 
     PangoRectangle *button = &table->manual_button;
-    if(event->x < button->x && event->x > button->x - button->width
-       && event->y < button->y && event->y > button->y - button->height)
+    if(x < button->x && x > button->x - button->width
+       && y < button->y && y > button->y - button->height)
     {
       dt_gui_show_help(NULL);
     }
@@ -1567,6 +1567,7 @@ static gboolean _event_button_release_primary(
           }
           else
           {
+            GtkWidget *widget = gtk_event_controller_get_widget(GTK_EVENT_CONTROLLER(gesture));
             GtkSettings *settings = gtk_widget_get_settings(GTK_WIDGET (widget));
             guint double_click_time = 400;
 
