@@ -247,11 +247,14 @@ static void language_callback(GtkWidget *widget, gpointer user_data)
   restart_required = TRUE;
 }
 
-static gboolean reset_language_widget(GtkWidget *label,
-                                      GdkEventButton *event,
-                                      GtkWidget *widget)
+static gboolean reset_language_widget(
+    GtkGestureMultiPress *gesture,
+    int n_press,
+    double x,
+    double y,
+    GtkWidget *widget)
 {
-  if(event->type == GDK_2BUTTON_PRESS)
+  if(n_press == 2)
   {
     dt_bauhaus_combobox_set(widget, darktable.l10n->sys_default);
     return TRUE;
@@ -324,7 +327,13 @@ static void init_tab_general(GtkWidget *dialog, GtkWidget *stack, dt_gui_themetw
   gtk_widget_set_tooltip_text(widget, _("set the language of the user interface. the system default is marked with an * \n(restart required)"));
   gtk_grid_attach(GTK_GRID(grid), labelev, 0, line++, 1, 1);
   gtk_grid_attach_next_to(GTK_GRID(grid), widget, labelev, GTK_POS_RIGHT, 1, 1);
-  g_signal_connect(G_OBJECT(labelev), "button-press-event", G_CALLBACK(reset_language_widget), (gpointer)widget);
+
+  dtgtk_button_default_handler_new(
+      GTK_WIDGET(labelev),
+      GDK_BUTTON_PRIMARY,
+      G_CALLBACK(reset_language_widget),
+      NULL,
+      widget);
 
   // theme
 
