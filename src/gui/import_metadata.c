@@ -103,9 +103,14 @@ static void _metadata_reset_all(dt_import_metadata_t *metadata, const gboolean h
   }
 }
 
-static gboolean _import_metadata_reset_all(GtkWidget *label, GdkEventButton *event, dt_import_metadata_t *metadata)
+static gboolean _import_metadata_reset_all(
+    GtkGestureMultiPress *gesture,
+    int n_press,
+    double x,
+    double y,
+    dt_import_metadata_t *metadata)
 {
-  if(event->type == GDK_2BUTTON_PRESS)
+  if(n_press == 2)
   {
     _metadata_reset_all(metadata, FALSE);
   }
@@ -420,8 +425,15 @@ void dt_import_metadata_init(dt_import_metadata_t *metadata)
   gtk_widget_set_tooltip_text(GTK_WIDGET(label), _("metadata to be applied per default"
                                                    "\ndouble-click on a label to clear the corresponding entry"
                                                    "\ndouble-click on 'preset' to clear all entries"));
-  g_signal_connect(GTK_EVENT_BOX(labelev), "button-press-event",
-                   G_CALLBACK(_import_metadata_reset_all), metadata);
+
+  dtgtk_button_default_handler_new(
+      GTK_WIDGET(labelev),
+      GDK_BUTTON_PRIMARY,
+      G_CALLBACK(_import_metadata_reset_all),
+      NULL,
+      metadata);
+  // g_signal_connect(GTK_EVENT_BOX(labelev), "button-press-event",
+  //                  G_CALLBACK(_import_metadata_reset_all), metadata);
 
 
   GtkWidget *presets = _set_up_combobox(metadata->m_model, DT_META_META_HEADER, metadata);
