@@ -155,9 +155,12 @@ static void _init_picker(dt_iop_color_picker_t *picker,
   _color_picker_reset(picker);
 }
 
-static gboolean _color_picker_callback_button_press(GtkWidget *button,
-                                                    GdkEventButton *e,
-                                                    dt_iop_color_picker_t *self)
+static gboolean _color_picker_callback_button_press(
+    GtkGestureMultiPress *gesture,
+    int n_press,
+    double x,
+    double y,
+    dt_iop_color_picker_t *self)
 {
   // module is NULL if primary colorpicker
   dt_iop_module_t *module = self->module;
@@ -175,9 +178,15 @@ static gboolean _color_picker_callback_button_press(GtkWidget *button,
   if(module && module->off)
     gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(module->off), TRUE);
 
-  const GdkModifierType state = e != NULL ? e->state : dt_key_modifier_state();
-  const gboolean to_area_mode =
-    dt_modifier_is(state, GDK_CONTROL_MASK) || (e != NULL && e->button == 3);
+  // get current state from the event to get the modifier keys
+  GdkModifierType state;
+  if (!gtk_get_current_event_state(&state))
+  {
+    state = dt_key_modifier_state();
+  }
+
+  const guint button = gtk_gesture_single_get_current_button(GTK_GESTURE_SINGLE(gesture));
+  const gboolean to_area_mode = dt_modifier_is(state, GDK_CONTROL_MASK) || button == GDK_BUTTON_SECONDARY;
   dt_iop_color_picker_flags_t flags = self->flags;
 
   // setup if a new picker or switching between point/area mode
@@ -269,7 +278,7 @@ static gboolean _color_picker_callback_button_press(GtkWidget *button,
 static void _color_picker_callback(GtkWidget *button,
                                    dt_iop_color_picker_t *self)
 {
-  _color_picker_callback_button_press(button, NULL, self);
+  _color_picker_callback_button_press(NULL, 0, 0, 0, self);
 }
 
 void dt_iop_color_picker_set_cst(dt_iop_module_t *module,
@@ -402,9 +411,16 @@ static GtkWidget *_color_picker_new(dt_iop_module_t *module,
       color_picker->picker_cst = cst;
       color_picker->fixed_cst = TRUE;
     }
-    g_signal_connect_data(G_OBJECT(button), "button-press-event",
-                          G_CALLBACK(_color_picker_callback_button_press),
-                          color_picker, (GClosureNotify)g_free, 0);
+
+    _dtgtk_button_default_handler_new(
+        GTK_WIDGET(button),
+        0, // react to all buttons
+        G_CALLBACK(_color_picker_callback_button_press),
+        NULL,
+        color_picker,
+        (GClosureNotify)g_free,
+        NULL);
+
     if(w) gtk_box_pack_start(GTK_BOX(w), button, FALSE, FALSE, 0);
 
     return button;
@@ -420,6 +436,7 @@ static GtkWidget *_color_picker_new(dt_iop_module_t *module,
       color_picker->picker_cst = cst;
       color_picker->fixed_cst = TRUE;
     }
+
     g_signal_connect_data(G_OBJECT(w), "quad-pressed",
                           G_CALLBACK(_color_picker_callback),
                           color_picker, (GClosureNotify)g_free, 0);
