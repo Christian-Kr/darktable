@@ -147,6 +147,65 @@ void dtgtk_button_set_active(GtkDarktableButton *button, gboolean active)
     button->icon_flags &= ~CPF_ACTIVE;
 }
 
+GtkGesture *_dtgtk_button_default_handler_new(
+    GtkWidget *widget,
+    guint button,
+    GCallback func_press,
+    GCallback func_release,
+    gpointer data,
+    GClosureNotify func_press_destroy,
+    GClosureNotify func_release_destroy)
+{
+  GtkGesture *gesture = gtk_gesture_multi_press_new(widget);
+  gtk_gesture_single_set_button(GTK_GESTURE_SINGLE(gesture), button);
+
+  if (func_press != NULL)
+  {
+    if (func_press_destroy != NULL)
+    {
+      g_signal_connect_data(
+          G_OBJECT(gesture),
+          "pressed",
+          func_press,
+          data,
+          func_press_destroy,
+          0);
+    }
+    else
+    {
+      g_signal_connect(
+          G_OBJECT(gesture),
+          "pressed",
+          func_press,
+          data);
+    }
+  }
+
+  if (func_release != NULL)
+  {
+    if (func_release_destroy != NULL)
+    {
+      g_signal_connect_data(
+          G_OBJECT(gesture),
+          "released",
+          func_release,
+          data,
+          func_release_destroy,
+          0);
+    }
+    else
+    {
+      g_signal_connect(
+          G_OBJECT(gesture),
+          "released",
+          func_release,
+          data);
+    }
+  }
+
+  return gesture;
+}
+
 GtkGesture *dtgtk_button_default_handler_new(
     GtkWidget *widget,
     guint button,
@@ -154,20 +213,14 @@ GtkGesture *dtgtk_button_default_handler_new(
     GCallback func_release,
     gpointer data)
 {
-  GtkGesture *gesture = gtk_gesture_multi_press_new(widget);
-  gtk_gesture_single_set_button(GTK_GESTURE_SINGLE(gesture), button);
-
-  if (func_press != NULL)
-  {
-    g_signal_connect(G_OBJECT(gesture), "pressed", func_press, data);
-  }
-
-  if (func_release != NULL)
-  {
-    g_signal_connect(G_OBJECT(gesture), "released", func_release, data);
-  }
-
-  return gesture;
+  return _dtgtk_button_default_handler_new(
+      widget,
+      button,
+      func_press,
+      func_release,
+      data,
+      NULL,
+      NULL);
 }
 
 // clang-format off

@@ -64,6 +64,26 @@ GtkGesture *dtgtk_button_default_handler_new(
     GCallback func_release,
     gpointer data);
 
+/**
+ * Create default handler for primary button.
+ * @param widget widget to create the gesture object for
+ * @param button type of button
+ * @param func_press gets called when button will be pressed
+ * @param func_release gets called when button will be released
+ * @param data user data send to function
+ * @param func_press_destroy gets called when connection pressed will be destroyed
+ * @param func_release_destroy gets called when connection released will be destroyed
+ * @return new gesture object; receiver is responsible for deletion
+ */
+GtkGesture *_dtgtk_button_default_handler_new(
+    GtkWidget *widget,
+    guint button,
+    GCallback func_press,
+    GCallback func_release,
+    gpointer data,
+    GClosureNotify func_press_destroy,
+    GClosureNotify func_release_destroy);
+
 G_END_DECLS
 
 // clang-format off
