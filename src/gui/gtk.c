@@ -1010,19 +1010,28 @@ guint dt_gui_translated_key_state(GdkEventKey *event)
     return event->state & gtk_accelerator_get_default_mod_mask();
 }
 
-static gboolean _button_pressed(GtkWidget *w,
-                                GdkEventButton *event,
-                                gpointer user_data)
+static gboolean _button_pressed(
+    GtkGestureMultiPress *gesture,
+    int n_press,
+    double x,
+    double y,
+    gpointer user_data)
 {
   double pressure = 1.0;
-  GdkDevice *device = gdk_event_get_source_device((GdkEvent *)event);
+  const GdkEvent *event = gtk_gesture_get_last_event(GTK_GESTURE(gesture), NULL);
+  GdkDevice *device = gtk_gesture_get_device(GTK_GESTURE(gesture));
+  GtkWidget *w = gtk_event_controller_get_widget(GTK_EVENT_CONTROLLER(gesture));
+  guint button = gtk_gesture_single_get_current_button(GTK_GESTURE_SINGLE(gesture));
+
+  GdkModifierType state;
+  gtk_get_current_event_state(&state);
 
   if(device && gdk_device_get_source(device) == GDK_SOURCE_PEN)
   {
-    gdk_event_get_axis((GdkEvent *)event, GDK_AXIS_PRESSURE, &pressure);
+    gdk_event_get_axis(event, GDK_AXIS_PRESSURE, &pressure);
   }
-  dt_control_button_pressed(event->x, event->y, pressure,
-                            event->button, event->type, event->state & 0xf);
+  dt_control_button_pressed(x, y, pressure,
+                            button, event->type, state & 0xf);
   gtk_widget_grab_focus(w);
   gtk_widget_queue_draw(w);
   return FALSE;
@@ -1327,8 +1336,14 @@ int dt_gui_gtk_init(dt_gui_gtk_t *gui)
                    G_CALLBACK(_center_leave), NULL);
   g_signal_connect(G_OBJECT(widget), "enter-notify-event",
                    G_CALLBACK(_center_enter), NULL);
-  g_signal_connect(G_OBJECT(widget), "button-press-event",
-                   G_CALLBACK(_button_pressed), NULL);
+
+  dtgtk_button_default_handler_new(
+      GTK_WIDGET(widget),
+      0,
+      G_CALLBACK(_button_pressed),
+      NULL,
+      NULL);
+
   g_signal_connect(G_OBJECT(widget), "button-release-event",
                    G_CALLBACK(_button_released), NULL);
   g_signal_connect(G_OBJECT(widget), "scroll-event",
