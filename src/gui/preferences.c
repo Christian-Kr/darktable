@@ -1286,11 +1286,11 @@ GtkWidget *dt_gui_preferences_int(GtkGrid *grid, const char *key, const guint co
   g_signal_connect(G_OBJECT(w), "value-changed", G_CALLBACK(_gui_preferences_int_callback), (gpointer)key);
 
   dtgtk_button_default_handler_new(
-    GTK_WIDGET(labelev),
-    GDK_BUTTON_PRIMARY,
-    G_CALLBACK(_gui_preferences_int_reset),
-    NULL,
-    w);
+      GTK_WIDGET(labelev),
+      GDK_BUTTON_PRIMARY,
+      G_CALLBACK(_gui_preferences_int_reset),
+      NULL,
+      w);
 
   return w;
 }
@@ -1356,9 +1356,14 @@ void dt_gui_preferences_string_reset(GtkWidget *widget)
 }
 
 static gboolean
-_gui_preferences_string_reset(GtkWidget *label, GdkEventButton *event, GtkWidget *widget)
+_gui_preferences_string_reset(
+    GtkGestureMultiPress *gesture,
+    int n_press,
+    double x,
+    double y,
+    GtkWidget *widget)
 {
-  if(event->type == GDK_2BUTTON_PRESS)
+  if(n_press == 2)
   {
     dt_gui_preferences_string_reset(widget);
     return TRUE;
@@ -1391,7 +1396,14 @@ GtkWidget *dt_gui_preferences_string(GtkGrid *grid, const char *key, const guint
   gtk_grid_attach(GTK_GRID(grid), labelev, col, line, 1, 1);
   gtk_grid_attach(GTK_GRID(grid), w, col + 1, line, 1, 1);
   g_signal_connect(G_OBJECT(w), "changed", G_CALLBACK(_gui_preferences_string_callback), (gpointer)key);
-  g_signal_connect(G_OBJECT(labelev), "button-press-event", G_CALLBACK(_gui_preferences_string_reset), (gpointer)w);
+
+  dtgtk_button_default_handler_new(
+      GTK_WIDGET(labelev),
+      GDK_BUTTON_PRIMARY,
+      G_CALLBACK(_gui_preferences_string_reset),
+      NULL,
+      w);
+
   return w;
 }
 
