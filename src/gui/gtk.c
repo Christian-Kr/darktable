@@ -406,9 +406,12 @@ static void _toggle_bottom_all_accel_callback(dt_action_t *action)
   dt_ui_panel_show(darktable.gui->ui, DT_UI_PANEL_CENTER_BOTTOM, !v, TRUE);
 }
 
-static gboolean _borders_button_pressed(GtkWidget *w,
-                                        GdkEventButton *event,
-                                        gpointer user_data)
+static gboolean _borders_button_pressed(
+    GtkGestureMultiPress *gesture,
+    int n_press,
+    double x,
+    double y,
+    gpointer user_data)
 {
   _panel_toggle(GPOINTER_TO_INT(user_data), darktable.gui->ui);
 
@@ -1646,8 +1649,14 @@ static GtkWidget *_init_outer_border(const gint width,
                         | darktable.gui->scroll_mask);
   g_signal_connect(widget, "draw",
                    G_CALLBACK(_draw_borders), GINT_TO_POINTER(which));
-  g_signal_connect(widget, "button-press-event",
-                   G_CALLBACK(_borders_button_pressed), GINT_TO_POINTER(which));
+
+  dtgtk_button_default_handler_new(
+      GTK_WIDGET(widget),
+      0,
+      G_CALLBACK(_borders_button_pressed),
+      NULL,
+      GINT_TO_POINTER(which));
+
   gtk_widget_set_name(GTK_WIDGET(widget), "outer-border");
   gtk_widget_show(widget);
 
