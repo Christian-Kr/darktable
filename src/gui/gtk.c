@@ -2419,10 +2419,14 @@ static void _add_remove_modules(dt_action_t *action)
   dt_gui_menu_popup(GTK_MENU(menu), NULL, 0, 0);
 }
 
-static gboolean _side_panel_press(GtkWidget *widget,
-                                  GdkEvent *event,
-                                  gpointer user_data)
+static gboolean _side_panel_press(
+    GtkGestureMultiPress *gesture,
+    int n_press,
+    double x,
+    double y,
+    gpointer user_data)
 {
+  const GdkEvent *event = gtk_gesture_get_last_event(GTK_GESTURE(gesture), NULL);
   if(event->button.button == GDK_BUTTON_SECONDARY)
     _add_remove_modules(NULL);
   return TRUE;
@@ -2480,7 +2484,14 @@ static GtkWidget *_ui_init_panel_container_center(GtkWidget *container,
   g_signal_connect(empty, "drag-motion", G_CALLBACK(_on_drag_motion_drop), GINT_TO_POINTER(FALSE));
   g_signal_connect(empty, "drag-drop", G_CALLBACK(_on_drag_motion_drop), GINT_TO_POINTER(TRUE));
   g_signal_connect(empty, "drag-leave", G_CALLBACK(_on_drag_leave), NULL);
-  g_signal_connect(empty, "button-press-event", G_CALLBACK(_side_panel_press), NULL);
+
+  dtgtk_button_default_handler_new(
+      GTK_WIDGET(empty),
+      0,
+      G_CALLBACK(_side_panel_press),
+      NULL,
+      NULL);
+
   gtk_widget_add_events(empty, GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK);
   dt_action_t *ac = dt_action_define(&darktable.control->actions_global, NULL,
                                      N_("show/hide modules"), empty, NULL);
