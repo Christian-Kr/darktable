@@ -1622,21 +1622,24 @@ static gboolean _focus_in_out_event(GtkWidget *widget,
 
 
 static gboolean _ui_log_button_press_event(
-  GtkGestureMultiPress *gesture,
-  int n_press,
-  double x,
-  double y,
-  GtkWidget *widget)
+    GtkGestureMultiPress *gesture,
+    int n_press,
+    double x,
+    double y,
+    GtkWidget *widget)
 {
   gtk_widget_hide(widget);
   return TRUE;
 }
 
-static gboolean _ui_toast_button_press_event(GtkWidget *widget,
-                                             GdkEvent *event,
-                                             gpointer user_data)
+static gboolean _ui_toast_button_press_event(
+    GtkGestureMultiPress *gesture,
+    int n_press,
+    double x,
+    double y,
+    GtkWidget *widget)
 {
-  gtk_widget_hide(GTK_WIDGET(user_data));
+  gtk_widget_hide(widget);
   return TRUE;
 }
 
@@ -1847,9 +1850,14 @@ static void _init_main_table(GtkWidget *container)
   /* the toast message */
   eb = gtk_event_box_new();
   darktable.gui->ui->toast_msg = gtk_label_new("");
-  g_signal_connect(G_OBJECT(eb), "button-press-event",
-                   G_CALLBACK(_ui_toast_button_press_event),
-                   darktable.gui->ui->toast_msg);
+
+  dtgtk_button_default_handler_new(
+      GTK_WIDGET(eb),
+      0,
+      G_CALLBACK(_ui_toast_button_press_event),
+      NULL,
+      darktable.gui->ui->toast_msg);
+
   gtk_widget_set_events(eb, GDK_BUTTON_PRESS_MASK | darktable.gui->scroll_mask);
   g_signal_connect(G_OBJECT(eb), "scroll-event", G_CALLBACK(_scrolled), NULL);
   gtk_label_set_ellipsize(GTK_LABEL(darktable.gui->ui->toast_msg), PANGO_ELLIPSIZE_MIDDLE);
