@@ -2507,34 +2507,41 @@ static GtkWidget *_ui_init_panel_container_bottom(GtkWidget *container)
   return w;
 }
 
-static gboolean _panel_handle_button_callback(GtkWidget *w,
-                                              GdkEventButton *e,
-                                              gpointer user_data)
+static gboolean _panel_handle_button_released_callback(
+    GtkGestureMultiPress *gesture,
+    int n_press,
+    double x,
+    double y,
+    gpointer user_data)
 {
-  if(e->button == 1)
-  {
-    if(e->type == GDK_BUTTON_PRESS)
-    {
-    darktable.gui->widgets.panel_handle_x = e->x;
-    darktable.gui->widgets.panel_handle_y = e->y;
+  darktable.gui->widgets.panel_handle_dragging = FALSE;
+  return TRUE;
+}
 
-      darktable.gui->widgets.panel_handle_dragging = TRUE;
-    }
-    else if(e->type == GDK_BUTTON_RELEASE)
-    {
-      darktable.gui->widgets.panel_handle_dragging = FALSE;
-    }
-    else if(e->type == GDK_2BUTTON_PRESS)
-    {
-      darktable.gui->widgets.panel_handle_dragging = FALSE;
-      // we hide the panel
-      if(strcmp(gtk_widget_get_name(w), "panel-handle-right") == 0)
-        dt_ui_panel_show(darktable.gui->ui, DT_UI_PANEL_RIGHT, FALSE, TRUE);
-      else if(strcmp(gtk_widget_get_name(w), "panel-handle-left") == 0)
-        dt_ui_panel_show(darktable.gui->ui, DT_UI_PANEL_LEFT, FALSE, TRUE);
-      else if(strcmp(gtk_widget_get_name(w), "panel-handle-bottom") == 0)
-        dt_ui_panel_show(darktable.gui->ui, DT_UI_PANEL_BOTTOM, FALSE, TRUE);
-    }
+static gboolean _panel_handle_button_pressed_callback(
+    GtkGestureMultiPress *gesture,
+    int n_press,
+    double x,
+    double y,
+    gpointer w)
+{
+  if(n_press == 1)
+  {
+    darktable.gui->widgets.panel_handle_x = x;
+    darktable.gui->widgets.panel_handle_y = y;
+
+    darktable.gui->widgets.panel_handle_dragging = TRUE;
+  }
+  else if(n_press == 2)
+  {
+    darktable.gui->widgets.panel_handle_dragging = FALSE;
+    // we hide the panel
+    if(strcmp(gtk_widget_get_name(w), "panel-handle-right") == 0)
+      dt_ui_panel_show(darktable.gui->ui, DT_UI_PANEL_RIGHT, FALSE, TRUE);
+    else if(strcmp(gtk_widget_get_name(w), "panel-handle-left") == 0)
+      dt_ui_panel_show(darktable.gui->ui, DT_UI_PANEL_LEFT, FALSE, TRUE);
+    else if(strcmp(gtk_widget_get_name(w), "panel-handle-bottom") == 0)
+      dt_ui_panel_show(darktable.gui->ui, DT_UI_PANEL_BOTTOM, FALSE, TRUE);
   }
   return TRUE;
 }
@@ -2616,10 +2623,13 @@ static void _ui_init_panel_left(dt_ui_t *ui,
                         | GDK_LEAVE_NOTIFY_MASK | GDK_POINTER_MOTION_MASK);
   gtk_widget_set_name(GTK_WIDGET(handle), "panel-handle-left");
 
-  g_signal_connect(G_OBJECT(handle), "button-press-event",
-                   G_CALLBACK(_panel_handle_button_callback), handle);
-  g_signal_connect(G_OBJECT(handle), "button-release-event",
-                   G_CALLBACK(_panel_handle_button_callback), handle);
+  dtgtk_button_default_handler_new(
+      GTK_WIDGET(handle),
+      GDK_BUTTON_PRIMARY,
+      G_CALLBACK(_panel_handle_button_pressed_callback),
+      G_CALLBACK(_panel_handle_button_released_callback),
+      handle);
+
   g_signal_connect(G_OBJECT(handle), "motion-notify-event",
                    G_CALLBACK(_panel_handle_motion_callback), widget);
   g_signal_connect(G_OBJECT(handle), "leave-notify-event",
@@ -2666,10 +2676,14 @@ static void _ui_init_panel_right(dt_ui_t *ui,
                         | GDK_ENTER_NOTIFY_MASK
                         | GDK_LEAVE_NOTIFY_MASK | GDK_POINTER_MOTION_MASK);
   gtk_widget_set_name(GTK_WIDGET(handle), "panel-handle-right");
-  g_signal_connect(G_OBJECT(handle), "button-press-event",
-                   G_CALLBACK(_panel_handle_button_callback), handle);
-  g_signal_connect(G_OBJECT(handle), "button-release-event",
-                   G_CALLBACK(_panel_handle_button_callback), handle);
+
+  dtgtk_button_default_handler_new(
+      GTK_WIDGET(handle),
+      GDK_BUTTON_PRIMARY,
+      G_CALLBACK(_panel_handle_button_pressed_callback),
+      G_CALLBACK(_panel_handle_button_released_callback),
+      handle);
+
   g_signal_connect(G_OBJECT(handle), "motion-notify-event",
                    G_CALLBACK(_panel_handle_motion_callback), widget);
   g_signal_connect(G_OBJECT(handle), "leave-notify-event",
@@ -2753,10 +2767,13 @@ static void _ui_init_panel_bottom(dt_ui_t *ui,
                         | GDK_LEAVE_NOTIFY_MASK | GDK_POINTER_MOTION_MASK);
   gtk_widget_set_name(GTK_WIDGET(handle), "panel-handle-bottom");
 
-  g_signal_connect(G_OBJECT(handle), "button-press-event",
-                   G_CALLBACK(_panel_handle_button_callback), handle);
-  g_signal_connect(G_OBJECT(handle), "button-release-event",
-                   G_CALLBACK(_panel_handle_button_callback), handle);
+  dtgtk_button_default_handler_new(
+      GTK_WIDGET(handle),
+      GDK_BUTTON_PRIMARY,
+      G_CALLBACK(_panel_handle_button_pressed_callback),
+      G_CALLBACK(_panel_handle_button_released_callback),
+      handle);
+
   g_signal_connect(G_OBJECT(handle), "motion-notify-event",
                    G_CALLBACK(_panel_handle_motion_callback), widget);
   g_signal_connect(G_OBJECT(handle), "leave-notify-event",
