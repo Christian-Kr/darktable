@@ -2507,6 +2507,15 @@ static GtkWidget *_ui_init_panel_container_bottom(GtkWidget *container)
   return w;
 }
 
+static gboolean _panel_handle_cancelled_callback(
+    GtkGesture *gesture,
+    GdkEventSequence* sequence,
+    gpointer user_data)
+{
+  darktable.gui->widgets.panel_handle_dragging = FALSE;
+  return TRUE;
+}
+
 static gboolean _panel_handle_button_released_callback(
     GtkGestureMultiPress *gesture,
     int n_press,
@@ -2623,11 +2632,16 @@ static void _ui_init_panel_left(dt_ui_t *ui,
                         | GDK_LEAVE_NOTIFY_MASK | GDK_POINTER_MOTION_MASK);
   gtk_widget_set_name(GTK_WIDGET(handle), "panel-handle-left");
 
-  dtgtk_button_default_handler_new(
+  GtkGesture *gesture = dtgtk_button_default_handler_new(
       GTK_WIDGET(handle),
-      GDK_BUTTON_PRIMARY,
+      0,
       G_CALLBACK(_panel_handle_button_pressed_callback),
       G_CALLBACK(_panel_handle_button_released_callback),
+      handle);
+  g_signal_connect(
+      gesture,
+      "cancel",
+      G_CALLBACK(_panel_handle_cancelled_callback),
       handle);
 
   g_signal_connect(G_OBJECT(handle), "motion-notify-event",
@@ -2677,11 +2691,16 @@ static void _ui_init_panel_right(dt_ui_t *ui,
                         | GDK_LEAVE_NOTIFY_MASK | GDK_POINTER_MOTION_MASK);
   gtk_widget_set_name(GTK_WIDGET(handle), "panel-handle-right");
 
-  dtgtk_button_default_handler_new(
+  GtkGesture *gesture = dtgtk_button_default_handler_new(
       GTK_WIDGET(handle),
-      GDK_BUTTON_PRIMARY,
+      0,
       G_CALLBACK(_panel_handle_button_pressed_callback),
       G_CALLBACK(_panel_handle_button_released_callback),
+      handle);
+  g_signal_connect(
+      gesture,
+      "cancel",
+      G_CALLBACK(_panel_handle_cancelled_callback),
       handle);
 
   g_signal_connect(G_OBJECT(handle), "motion-notify-event",
@@ -2767,11 +2786,16 @@ static void _ui_init_panel_bottom(dt_ui_t *ui,
                         | GDK_LEAVE_NOTIFY_MASK | GDK_POINTER_MOTION_MASK);
   gtk_widget_set_name(GTK_WIDGET(handle), "panel-handle-bottom");
 
-  dtgtk_button_default_handler_new(
+  GtkGesture *gesture = dtgtk_button_default_handler_new(
       GTK_WIDGET(handle),
-      GDK_BUTTON_PRIMARY,
+      0,
       G_CALLBACK(_panel_handle_button_pressed_callback),
       G_CALLBACK(_panel_handle_button_released_callback),
+      handle);
+  g_signal_connect(
+      gesture,
+      "cancel",
+      G_CALLBACK(_panel_handle_cancelled_callback),
       handle);
 
   g_signal_connect(G_OBJECT(handle), "motion-notify-event",
