@@ -181,13 +181,13 @@ changes (where available).
   synchronizing the last edited module on current edited module to the
   selection.
 
-- Expose encoding speed control for AVIF export: trades off export
-  time for file size and quality.
+- Adjusted the internal AVIF encoder parameter to significantly boost
+  encoding speed without compromising the output quality.
 
 - Tag names can now easily be copied to the clipboard via popup
   context menu in the tagging module.
 
-- The piwigo export storage now supports to specify a file name
+- The Piwigo export storage now supports to specify a file name
   pattern for the exported file.
 
 - The directory where darktable will write the log file under Windows
@@ -202,7 +202,7 @@ changes (where available).
 
 - Add a visible indicator to the color calibration module when its
   color mapping section has non-neutral settings which will affect
-  color rendition..
+  color rendition.
 
 - Added new substitution variables $(IMAGE.TAGS.HIERARCHY) to insert
   tags with full hierarchy and $(IMAGE.ID.NEXT) to insert the image ID
@@ -244,13 +244,16 @@ changes (where available).
   skin tones, and miscellaneous color patches for more targeted color
   adjustments across the full spectrum.
 
-- Added support for exif tags 'AnalogBalance' used for color
-  calibration and LinearResponseLimit used in highlights
+- Added support for EXIF tags 'AnalogBalance' used for color
+  calibration and 'LinearResponseLimit' used in highlights
   reconstruction.
 
 - If we find currently unsupported color calibration data in DNG
   specific tags, we tag the image by darktable|issue|no-samples for
   better support.
+
+- Added support for HEIF files with AVC (H.264) compression and .avci
+  file extension.
 
 ## Bug Fixes
 
@@ -267,7 +270,7 @@ changes (where available).
 - Fixed printer discovery in the print module, which could cause
   available printers to be missed.
 
-- Work around out-of-spec ExIF date field caused by buggy software.
+- Work around out-of-spec EXIF date field caused by buggy software.
 
 - Fixed reading embedded color profiles from PNG images.
 
@@ -288,8 +291,8 @@ changes (where available).
 - Properly reset darktable internal tag darktable|style|<name> and
   darktable|changed when resetting history.
 
-- Fixed crash in the piwigo export storage when not logged in to the
-  piwigo server.
+- Fixed crash in the Piwigo export storage when not logged in to the
+  Piwigo server.
 
 - Fixed a bug in the export module where it was impossible to export a
   file again if "on conflict: overwrite if changed" was selected.
@@ -310,7 +313,7 @@ changes (where available).
 - Fixed a bug in color calibration module where switching between
   various illuminants could lead to unpredictable settings.
 
-- Various fixes In the demosicer module. Non-usable options are hidden
+- Various fixes In the demosaic module. Non-usable options are hidden
   now. Fixed dual demosaicing for xtrans sensors and OpenCL code.
 
 - Fixed a bug in the history module where style creation fails if a
@@ -383,10 +386,6 @@ changes (where available).
 
 ### Mandatory
 
-- Minimum libpng version 1.5.x is now required
-- Bump Exiv2 requirement to 0.27.2
-- Minimum pugixml version 1.5 is now required
-- Minimum libcurl version 7.56 is now required
 - Bump SQLite requirement to 3.26
 
 ### Optional
@@ -395,48 +394,21 @@ changes (where available).
 
 ## RawSpeed changes
 
-- Fujifilm X-Trans 4 based and newer cameras now use the vendor supplied crop
+- Fujifilm GFX cameras now use the vendor supplied crop
 
-## Camera support, compared to 4.6
+## Camera support, compared to 4.8
 
 ### Base Support
 
-- Canon EOS R100 (requires LibRaw 202403 and later)
-- Canon EOS R50 (requires LibRaw 202403 and later)
-- Canon EOS R6 Mark II (requires LibRaw 202403 and later)
-- Canon EOS R8 (requires LibRaw 202403 and later)
-- Canon EOS Ra (requires LibRaw 202403 and later)
-- Fujifilm FinePix S9600fd
-- Fujifilm X100VI (compressed)
-- GoPro FUSION (DNG)
-- Leica SL3 (DNG)
-- OM System OM-1 Mark II
-- Panasonic DC-TZ95D (4:3)
-- Panasonic DMC-FX150 (4:3, 3:2, 16:9)
-- Panasonic DMC-FZ28 (3:2)
-- Phase One P25+
-- Phase One P45+
-- Ricoh GR III HDF (DNG)
-- Ricoh GR IIIx HDF (DNG)
-- Sony ILCE-9M3
-- Sony UMC-R10C
+- ???
 
 ### White Balance Presets
 
-- Canon EOS R6 Mark II (requires LibRaw 202403 and later)
-- Fujifilm X-H2
-- OM System OM-1 Mark II
-- OM System OM-5
+- ???
 
 ### Noise Profiles
 
-- Canon EOS R6 Mark II (requires LibRaw 202403 and later)
-- Fujifilm GFX 50R
-- OM System OM-1 Mark II
-- OM System OM-5
-- Phase One IQ180
-- Sony ILCE-9M3
-- Sony ZV-1
+- ???
 
 ### Missing Compression Mode Support
 
