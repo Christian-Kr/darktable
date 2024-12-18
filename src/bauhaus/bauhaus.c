@@ -588,9 +588,12 @@ static gboolean _popup_leave_notify(GtkWidget *widget,
   return TRUE;
 }
 
-static gboolean _popup_button_release(GtkWidget *widget,
-                                      GdkEventButton *event,
-                                      gpointer user_data)
+static gboolean _popup_button_release(
+    GtkGesture *gesture,
+    int n_press,
+    double x,
+    double y,
+    gpointer user_data)
 {
   if(darktable.bauhaus->change_active)
     _popup_hide();
@@ -598,10 +601,16 @@ static gboolean _popup_button_release(GtkWidget *widget,
   return TRUE;
 }
 
-static gboolean _popup_button_press(GtkWidget *widget,
-                                    GdkEventButton *event,
-                                    gpointer user_data)
+static gboolean _popup_button_press(
+    GtkGesture *gesture,
+    int n_press,
+    double x,
+    double y,
+    gpointer user_data)
 {
+  GtkWidget *widget = gtk_event_controller_get_widget(GTK_EVENT_CONTROLLER(gesture));
+  GdkEventButton *event = (GdkEventButton *)gtk_gesture_get_last_event(GTK_GESTURE(gesture), NULL);
+
   if(event->window != gtk_widget_get_window(widget))
   {
     _popup_reject();
@@ -873,8 +882,17 @@ void dt_bauhaus_init()
   g_signal_connect(window, "motion-notify-event", G_CALLBACK(_window_motion_notify), NULL);
   g_signal_connect(area, "draw", G_CALLBACK(_popup_draw), NULL);
   g_signal_connect(area, "leave-notify-event", G_CALLBACK(_popup_leave_notify), NULL);
-  g_signal_connect(area, "button-press-event", G_CALLBACK(_popup_button_press), NULL);
-  g_signal_connect(area, "button-release-event", G_CALLBACK (_popup_button_release), NULL);
+
+  // g_signal_connect(area, "button-press-event", G_CALLBACK(_popup_button_press), NULL);
+  // g_signal_connect(area, "button-release-event", G_CALLBACK (_popup_button_release), NULL);
+
+  dtgtk_button_default_handler_new(
+       GTK_WIDGET(area),
+       0,
+       G_CALLBACK(_popup_button_press),
+       G_CALLBACK(_popup_button_release),
+       NULL);
+
   g_signal_connect(area, "key-press-event", G_CALLBACK(_popup_key_press), NULL);
   g_signal_connect(area, "scroll-event", G_CALLBACK(_popup_scroll), NULL);
 
