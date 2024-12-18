@@ -3801,10 +3801,16 @@ static gboolean _notebook_scroll_callback(GtkNotebook *notebook,
   return TRUE;
 }
 
-static gboolean _notebook_button_press_callback(GtkNotebook *notebook,
-                                                GdkEventButton *event,
-                                                gpointer user_data)
+static gboolean _notebook_button_press_callback(
+    GtkGesture *gesture,
+    int n_press,
+    double x,
+    double y,
+    gpointer user_data)
 {
+  GtkNotebook *notebook = GTK_NOTEBOOK(gtk_event_controller_get_widget(GTK_EVENT_CONTROLLER(gesture)));
+  const GdkEventButton *event = (GdkEventButton *)gtk_gesture_get_last_event(GTK_GESTURE(gesture), NULL);
+
   if(event->type == GDK_2BUTTON_PRESS)
     _reset_all_bauhaus(notebook, gtk_notebook_get_nth_page(notebook, gtk_notebook_get_current_page(notebook)));
 
@@ -3840,8 +3846,14 @@ GtkWidget *dt_ui_notebook_page(GtkNotebook *notebook,
                      G_CALLBACK(_notebook_motion_notify_callback), NULL);
     g_signal_connect(G_OBJECT(notebook), "scroll-event",
                      G_CALLBACK(_notebook_scroll_callback), NULL);
-    g_signal_connect(G_OBJECT(notebook), "button-press-event",
-                     G_CALLBACK(_notebook_button_press_callback), NULL);
+
+    dtgtk_button_default_handler_new(
+        GTK_WIDGET(notebook),
+        0,
+        G_CALLBACK(_notebook_button_press_callback),
+        NULL,
+        NULL);
+
     gtk_widget_add_events(GTK_WIDGET(notebook), darktable.gui->scroll_mask);
   }
   if(_current_action_def)
