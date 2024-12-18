@@ -883,9 +883,6 @@ void dt_bauhaus_init()
   g_signal_connect(area, "draw", G_CALLBACK(_popup_draw), NULL);
   g_signal_connect(area, "leave-notify-event", G_CALLBACK(_popup_leave_notify), NULL);
 
-  // g_signal_connect(area, "button-press-event", G_CALLBACK(_popup_button_press), NULL);
-  // g_signal_connect(area, "button-release-event", G_CALLBACK (_popup_button_release), NULL);
-
   dtgtk_button_default_handler_new(
        GTK_WIDGET(area),
        0,
