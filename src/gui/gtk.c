@@ -4118,10 +4118,26 @@ static gboolean _resize_wrap_motion(GtkWidget *widget,
   return FALSE;
 }
 
-static gboolean _resize_wrap_button(GtkWidget *widget,
-                                    GdkEventButton *event,
-                                    const char *config_str)
+static gboolean _resize_wrap_cancelled_callback(
+    GtkGesture *gesture,
+    GdkEventSequence* sequence,
+    gpointer user_data)
 {
+  _resize_wrap_dragging = FALSE;
+  dt_control_change_cursor(GDK_LEFT_PTR);
+  return TRUE;
+}
+
+static gboolean _resize_wrap_button(
+    GtkGesture *gesture,
+    int n_press,
+    double x,
+    double y,
+    const char *config_str)
+{
+  GtkWidget *widget = gtk_event_controller_get_widget(GTK_EVENT_CONTROLLER(gesture));
+  GdkEventButton *event = (GdkEventButton *)gtk_gesture_get_last_event(GTK_GESTURE(gesture), NULL);
+
   if(_resize_wrap_dragging
      && event->type == GDK_BUTTON_RELEASE)
   {
@@ -4200,10 +4216,19 @@ GtkWidget *dt_ui_resize_wrap(GtkWidget *w,
                          | GDK_POINTER_MOTION_MASK | darktable.gui->scroll_mask);
   g_signal_connect(G_OBJECT(w), "motion-notify-event",
                    G_CALLBACK(_resize_wrap_motion), config_str);
-  g_signal_connect(G_OBJECT(w), "button-press-event",
-                   G_CALLBACK(_resize_wrap_button), config_str);
-  g_signal_connect(G_OBJECT(w), "button-release-event",
-                   G_CALLBACK(_resize_wrap_button), config_str);
+
+  GtkGesture *gesture = dtgtk_button_default_handler_new(
+      GTK_WIDGET(w),
+      0,
+      G_CALLBACK(_resize_wrap_button),
+      G_CALLBACK(_resize_wrap_button),
+      config_str);
+  g_signal_connect(
+      gesture,
+      "cancel",
+      G_CALLBACK(_resize_wrap_cancelled_callback),
+      NULL);
+
   g_signal_connect(G_OBJECT(w), "enter-notify-event",
                    G_CALLBACK(_resize_wrap_enter_leave), config_str);
   g_signal_connect(G_OBJECT(w), "leave-notify-event",
