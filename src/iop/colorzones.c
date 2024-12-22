@@ -2091,10 +2091,16 @@ static gboolean _area_motion_notify_callback(GtkWidget *widget,
   return TRUE;
 }
 
-static gboolean _area_button_press_callback(GtkWidget *widget,
-                                            GdkEventButton *event,
-                                            dt_iop_module_t *self)
+static gboolean _area_button_press_callback(
+    GtkGesture *gesture,
+    const int n_press,
+    double,
+    double,
+    dt_iop_module_t *self)
 {
+  GtkWidget *widget = gtk_event_controller_get_widget(GTK_EVENT_CONTROLLER(gesture));
+  const GdkEventButton *event = (GdkEventButton *)gtk_gesture_get_last_event(GTK_GESTURE(gesture), NULL);
+
   dt_iop_colorzones_gui_data_t *g = self->gui_data;
   dt_iop_colorzones_params_t *p = self->params;
   const dt_iop_colorzones_params_t *const d = self->default_params;
@@ -2107,7 +2113,7 @@ static gboolean _area_button_press_callback(GtkWidget *widget,
 
   if(event->button == 1)
   {
-    if(g->edit_by_area && event->type != GDK_2BUTTON_PRESS
+    if(g->edit_by_area && n_press == 1
        && !dt_modifier_is(event->state, GDK_CONTROL_MASK))
     {
       g->dragging = 1;
@@ -2175,7 +2181,7 @@ static gboolean _area_button_press_callback(GtkWidget *widget,
 
       return TRUE;
     }
-    else if(event->type == GDK_2BUTTON_PRESS)
+    else if(n_press == 2)
     {
       // reset current curve
       p->curve_num_nodes[ch] = d->curve_num_nodes[ch];
@@ -2230,10 +2236,15 @@ static gboolean _area_button_press_callback(GtkWidget *widget,
   return FALSE;
 }
 
-static gboolean _area_button_release_callback(GtkWidget *widget,
-                                              GdkEventButton *event,
-                                              dt_iop_module_t *self)
+static gboolean _area_button_release_callback(
+    GtkGesture *gesture,
+    int,
+    double,
+    double,
+    dt_iop_module_t *self)
 {
+  const GdkEventButton *event = (GdkEventButton *)gtk_gesture_get_last_event(GTK_GESTURE(gesture), NULL);
+
   if(darktable.develop->darkroom_skip_mouse_events) return TRUE;
 
   if(event->button == 1)
@@ -2722,10 +2733,14 @@ void gui_init(dt_iop_module_t *self)
   gtk_widget_set_can_focus(GTK_WIDGET(g->area), TRUE);
   g_signal_connect(G_OBJECT(g->area), "draw",
                    G_CALLBACK(_area_draw_callback), self);
-  g_signal_connect(G_OBJECT(g->area), "button-press-event",
-                   G_CALLBACK(_area_button_press_callback), self);
-  g_signal_connect(G_OBJECT(g->area), "button-release-event",
-                   G_CALLBACK(_area_button_release_callback), self);
+
+  dtgtk_button_default_handler_new(
+      GTK_WIDGET(g->area),
+      0,
+      G_CALLBACK(_area_button_press_callback),
+      G_CALLBACK(_area_button_release_callback),
+      self);
+
   g_signal_connect(G_OBJECT(g->area), "motion-notify-event",
                    G_CALLBACK(_area_motion_notify_callback), self);
   g_signal_connect(G_OBJECT(g->area), "leave-notify-event",
