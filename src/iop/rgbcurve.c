@@ -1294,10 +1294,16 @@ finally:
   return TRUE;
 }
 
-static gboolean _area_button_press_callback(GtkWidget *widget,
-                                            GdkEventButton *event,
-                                            dt_iop_module_t *self)
+static gboolean _area_button_press_callback(
+    GtkGesture *gesture,
+    const int n_press,
+    double,
+    double,
+    dt_iop_module_t *self)
 {
+  GtkWidget *widget = gtk_event_controller_get_widget(GTK_EVENT_CONTROLLER(gesture));
+  const GdkEventButton *event = (GdkEventButton *)gtk_gesture_get_last_event(GTK_GESTURE(gesture), NULL);
+
   dt_iop_rgbcurve_params_t *p = self->params;
   const dt_iop_rgbcurve_params_t *const d = self->default_params;
   dt_iop_rgbcurve_gui_data_t *g = self->gui_data;
@@ -1375,7 +1381,7 @@ static gboolean _area_button_press_callback(GtkWidget *widget,
 
       return TRUE;
     }
-    else if(event->type == GDK_2BUTTON_PRESS)
+    else if(n_press == 2)
     {
       // reset current curve
       // if autoscale is on: allow only reset of L curve
@@ -1549,8 +1555,14 @@ void gui_init(dt_iop_module_t *self)
   gtk_widget_set_can_focus(GTK_WIDGET(g->area), TRUE);
   g_signal_connect(G_OBJECT(g->area), "draw",
                    G_CALLBACK(_area_draw_callback), self);
-  g_signal_connect(G_OBJECT(g->area), "button-press-event",
-                   G_CALLBACK(_area_button_press_callback), self);
+
+  dtgtk_button_default_handler_new(
+      GTK_WIDGET(g->area),
+      0,
+      G_CALLBACK(_area_button_press_callback),
+      NULL,
+      self);
+
   g_signal_connect(G_OBJECT(g->area), "motion-notify-event",
                    G_CALLBACK(_area_motion_notify_callback), self);
   g_signal_connect(G_OBJECT(g->area), "leave-notify-event",
