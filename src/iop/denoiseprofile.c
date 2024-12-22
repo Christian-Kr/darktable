@@ -3544,13 +3544,19 @@ static gboolean denoiseprofile_motion_notify(GtkWidget *widget,
   return TRUE;
 }
 
-static gboolean denoiseprofile_button_press(GtkWidget *widget,
-                                            GdkEventButton *event,
-                                            dt_iop_module_t *self)
+static gboolean denoiseprofile_button_press(
+    GtkGesture *gesture,
+    int n_press,
+    double x,
+    double y,
+    dt_iop_module_t *self)
 {
+  GtkWidget *widget = gtk_event_controller_get_widget(GTK_EVENT_CONTROLLER(gesture));
+  const GdkEventButton *event = (GdkEventButton *)gtk_gesture_get_last_event(GTK_GESTURE(gesture), NULL);
+
   dt_iop_denoiseprofile_gui_data_t *g = self->gui_data;
   const int ch = g->channel;
-  if(event->button == 1 && event->type == GDK_2BUTTON_PRESS)
+  if(event->button == 1 && n_press == 2)
   {
     // reset current curve
     dt_iop_denoiseprofile_params_t *p = self->params;
@@ -3581,10 +3587,15 @@ static gboolean denoiseprofile_button_press(GtkWidget *widget,
   return FALSE;
 }
 
-static gboolean denoiseprofile_button_release(GtkWidget *widget,
-                                              GdkEventButton *event,
-                                              dt_iop_module_t *self)
+static gboolean denoiseprofile_button_release(
+    GtkGesture *gesture,
+    int n_press,
+    double x,
+    double y,
+    dt_iop_module_t *self)
 {
+  const GdkEventButton *event = (GdkEventButton *)gtk_gesture_get_last_event(GTK_GESTURE(gesture), NULL);
+
   if(event->button == 1)
   {
     dt_iop_denoiseprofile_gui_data_t *g = self->gui_data;
@@ -3707,10 +3718,14 @@ void gui_init(dt_iop_module_t *self)
   dt_action_define_iop(self, NULL, N_("graph"), GTK_WIDGET(g->area), NULL);
 
   g_signal_connect(G_OBJECT(g->area), "draw", G_CALLBACK(denoiseprofile_draw), self);
-  g_signal_connect(G_OBJECT(g->area), "button-press-event",
-                   G_CALLBACK(denoiseprofile_button_press), self);
-  g_signal_connect(G_OBJECT(g->area), "button-release-event",
-                   G_CALLBACK(denoiseprofile_button_release), self);
+
+  dtgtk_button_default_handler_new(
+      GTK_WIDGET(g->area),
+      0,
+      G_CALLBACK(denoiseprofile_button_press),
+      G_CALLBACK(denoiseprofile_button_release),
+      self);
+
   g_signal_connect(G_OBJECT(g->area), "motion-notify-event",
                    G_CALLBACK(denoiseprofile_motion_notify), self);
   g_signal_connect(G_OBJECT(g->area), "leave-notify-event",
