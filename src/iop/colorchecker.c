@@ -1419,9 +1419,15 @@ static gboolean checker_motion_notify(
 }
 
 static gboolean checker_button_press(
-    GtkWidget *widget, GdkEventButton *event,
+    GtkGesture *gesture,
+    int n_press,
+    double x,
+    double y,
     dt_iop_module_t *self)
 {
+  GtkWidget *widget = gtk_event_controller_get_widget(GTK_EVENT_CONTROLLER(gesture));
+  GdkEventButton *event = (GdkEventButton *)gtk_gesture_get_last_event(GTK_GESTURE(gesture), NULL);
+
   dt_iop_colorchecker_params_t *p = self->params;
   dt_iop_colorchecker_gui_data_t *g = self->gui_data;
 
@@ -1439,7 +1445,7 @@ static gboolean checker_button_press(
   const float mx = mouse_x * cells_x / (float)width;
   const float my = mouse_y * cells_y / (float)height;
   int patch = (int)mx + cells_x*(int)my;
-  if(event->button == 1 && event->type == GDK_2BUTTON_PRESS)
+  if(event->button == 1 && n_press == 2)
   { // reset on double click
     if(patch < 0 || patch >= p->num_patches) return FALSE;
     p->target_L[patch] = p->source_L[patch];
@@ -1543,8 +1549,14 @@ void gui_init(dt_iop_module_t *self)
                         | GDK_LEAVE_NOTIFY_MASK);
   g_signal_connect(G_OBJECT(g->area), "draw",
                    G_CALLBACK(checker_draw), self);
-  g_signal_connect(G_OBJECT(g->area), "button-press-event",
-                   G_CALLBACK(checker_button_press), self);
+
+  dtgtk_button_default_handler_new(
+      GTK_WIDGET(g->area),
+      0,
+      G_CALLBACK(checker_button_press),
+      NULL,
+      self);
+
   g_signal_connect(G_OBJECT(g->area), "motion-notify-event",
                    G_CALLBACK(checker_motion_notify), self);
 
