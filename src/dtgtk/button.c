@@ -19,6 +19,7 @@
 #include "button.h"
 #include "bauhaus/bauhaus.h"
 #include "gui/gtk.h"
+#include "gesture.h"
 #include <string.h>
 
 G_DEFINE_TYPE(GtkDarktableButton, dtgtk_button, GTK_TYPE_BUTTON)
@@ -156,7 +157,7 @@ GtkGesture *_dtgtk_button_default_handler_new(
     GClosureNotify func_press_destroy,
     GClosureNotify func_release_destroy)
 {
-  GtkGesture *gesture = gtk_gesture_multi_press_new(widget);
+  GtkGesture *gesture = dtgtk_gesture_multi_press_new(widget);
   gtk_gesture_single_set_button(GTK_GESTURE_SINGLE(gesture), button);
 
   if (func_press != NULL)

@@ -122,6 +122,7 @@ FILE(GLOB SOURCE_FILES
   "dtgtk/culling.c"
   "dtgtk/drawingarea.c"
   "dtgtk/expander.c"
+  "dtgtk/gesture.c"
   "dtgtk/gradientslider.c"
   "dtgtk/icon.c"
   "dtgtk/paint.c"

@@ -1659,24 +1659,25 @@ static gboolean _bottom_area_draw_callback(GtkWidget *widget,
 #undef DT_COLORZONES_CELLSI
 #undef DT_COLORZONES_CELLSJ
 
-static gboolean _bottom_area_button_press_callback(GtkWidget *widget,
-                                                   GdkEventButton *event,
-                                                   dt_iop_module_t *self)
+static void _bottom_area_button_press_callback(
+    GtkGesture *gesture,
+    const int n_press,
+    double,
+    double,
+    dt_iop_module_t *self)
 {
+  const GdkEventButton *event = (GdkEventButton *)gtk_gesture_get_last_event(GTK_GESTURE(gesture), NULL);
+
   dt_iop_colorzones_gui_data_t *g = self->gui_data;
 
-  if(event->button == 1 && event->type == GDK_2BUTTON_PRESS)
+  if(event->button == 1 && n_press == 2)
   {
     // reset zoom level
     g->zoom_factor = 1.f;
     g->offset_x = g->offset_y = 0.f;
 
     gtk_widget_queue_draw(GTK_WIDGET(g->area));
-
-    return TRUE;
   }
-
-  return FALSE;
 }
 
 static gboolean _sanity_check(const float x,
@@ -2091,7 +2092,7 @@ static gboolean _area_motion_notify_callback(GtkWidget *widget,
   return TRUE;
 }
 
-static gboolean _area_button_press_callback(
+static void _area_button_press_callback(
     GtkGesture *gesture,
     const int n_press,
     double,
@@ -2105,7 +2106,7 @@ static gboolean _area_button_press_callback(
   dt_iop_colorzones_params_t *p = self->params;
   const dt_iop_colorzones_params_t *const d = self->default_params;
 
-  if(darktable.develop->darkroom_skip_mouse_events) return TRUE;
+  if(darktable.develop->darkroom_skip_mouse_events) return;
 
   int ch = g->channel;
   int nodes = p->curve_num_nodes[ch];
@@ -2117,7 +2118,6 @@ static gboolean _area_button_press_callback(
        && !dt_modifier_is(event->state, GDK_CONTROL_MASK))
     {
       g->dragging = 1;
-      return TRUE;
     }
     else if(event->type == GDK_BUTTON_PRESS
             && dt_modifier_is(event->state, GDK_CONTROL_MASK)
@@ -2178,8 +2178,6 @@ static gboolean _area_button_press_callback(
         dt_dev_add_history_item_target(darktable.develop, self, TRUE, widget + ch);
         gtk_widget_queue_draw(GTK_WIDGET(g->area));
       }
-
-      return TRUE;
     }
     else if(n_press == 2)
     {
@@ -2196,8 +2194,6 @@ static gboolean _area_button_press_callback(
       dt_iop_color_picker_reset(self, TRUE);
       dt_dev_add_history_item_target(darktable.develop, self, TRUE, widget + ch);
       gtk_widget_queue_draw(GTK_WIDGET(g->area));
-
-      return TRUE;
     }
   }
   else if(event->button == 3 && g->selected >= 0)
@@ -2222,21 +2218,17 @@ static gboolean _area_button_press_callback(
       dt_iop_color_picker_reset(self, TRUE);
       gtk_widget_queue_draw(GTK_WIDGET(g->area));
       dt_dev_add_history_item_target(darktable.develop, self, TRUE, widget + ch);
-      return TRUE;
+      return;
     }
 
     // right click deletes the node, ctrl+right click reset the node to y-zero
     _delete_node(self, curve, &p->curve_num_nodes[ch],
                  g->selected, dt_modifier_is(event->state, GDK_CONTROL_MASK));
     g->selected = -2; // avoid re-insertion of that point immediately after this
-
-    return TRUE;
   }
-
-  return FALSE;
 }
 
-static gboolean _area_button_release_callback(
+static void _area_button_release_callback(
     GtkGesture *gesture,
     int,
     double,
@@ -2245,15 +2237,13 @@ static gboolean _area_button_release_callback(
 {
   const GdkEventButton *event = (GdkEventButton *)gtk_gesture_get_last_event(GTK_GESTURE(gesture), NULL);
 
-  if(darktable.develop->darkroom_skip_mouse_events) return TRUE;
+  if(darktable.develop->darkroom_skip_mouse_events) return;
 
   if(event->button == 1)
   {
     dt_iop_colorzones_gui_data_t *g = self->gui_data;
     g->dragging = 0;
-    return TRUE;
   }
-  return FALSE;
 }
 
 static gboolean _area_leave_notify_callback(GtkWidget *widget,
@@ -2753,9 +2743,13 @@ void gui_init(dt_iop_module_t *self)
   gtk_widget_add_events(GTK_WIDGET(g->bottom_area), GDK_BUTTON_PRESS_MASK);
   g_signal_connect(G_OBJECT(g->bottom_area), "draw",
                    G_CALLBACK(_bottom_area_draw_callback), self);
-  g_signal_connect(G_OBJECT(g->bottom_area), "button-press-event",
-                   G_CALLBACK(_bottom_area_button_press_callback),
-                   self);
+
+  dtgtk_button_default_handler_new(
+      GTK_WIDGET(g->bottom_area),
+      0,
+      G_CALLBACK(_bottom_area_button_press_callback),
+      NULL,
+      self);
 
   /* From src/common/curve_tools.h :
     #define CUBIC_SPLINE 0
