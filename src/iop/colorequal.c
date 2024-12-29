@@ -2783,10 +2783,15 @@ static gboolean _area_motion_notify_callback(GtkWidget *widget,
   return TRUE;
 }
 
-static gboolean _area_button_press_callback(GtkWidget *widget,
-                                            GdkEventButton *event,
-                                            dt_iop_module_t *self)
+static void _area_button_press_callback(
+    GtkGesture *gesture,
+    int n_press,
+    double x,
+    double y,
+    dt_iop_module_t *self)
 {
+  GdkEventButton *event = (GdkEventButton *)gtk_gesture_get_last_event(GTK_GESTURE(gesture), NULL);
+
   dt_iop_colorequal_gui_data_t *g = self->gui_data;
 
   if(event->button == 2
@@ -2799,10 +2804,9 @@ static gboolean _area_button_press_callback(GtkWidget *widget,
   }
   else if(event->button == 1)
   {
-    if(event->type == GDK_2BUTTON_PRESS)
+    if(n_press == 2)
     {
       _area_reset_nodes(g);
-      return TRUE;
     }
     else
     {
@@ -2810,24 +2814,24 @@ static gboolean _area_button_press_callback(GtkWidget *widget,
     }
   }
   else
-    return gtk_widget_event(_get_slider(g, g->selected), (GdkEvent*)event);
-
-  return FALSE;
+    gtk_widget_event(_get_slider(g, g->selected), (GdkEvent*)event);
 }
 
-static gboolean _area_button_release_callback(GtkWidget *widget,
-                                              GdkEventButton *event,
-                                              dt_iop_module_t *self)
+static void _area_button_release_callback(
+    GtkGesture *gesture,
+    int n_press,
+    double x,
+    double y,
+    dt_iop_module_t *self)
 {
+  GdkEventButton *event = (GdkEventButton *)gtk_gesture_get_last_event(GTK_GESTURE(gesture), NULL);
+
   dt_iop_colorequal_gui_data_t *g = self->gui_data;
 
   if(event->button == 1)
   {
     g->dragging = FALSE;
-    return TRUE;
   }
-
-  return FALSE;
 }
 
 static gboolean _area_size_callback(GtkWidget *widget,
@@ -3044,10 +3048,19 @@ void gui_init(dt_iop_module_t *self)
                         | GDK_SCROLL_MASK
                         | GDK_SMOOTH_SCROLL_MASK);
   g_signal_connect(G_OBJECT(g->area), "draw", G_CALLBACK(_iop_colorequalizer_draw), self);
-  g_signal_connect(G_OBJECT(g->area), "button-press-event",
-                   G_CALLBACK(_area_button_press_callback), self);
-  g_signal_connect(G_OBJECT(g->area), "button-release-event",
-                   G_CALLBACK(_area_button_release_callback), self);
+
+  dtgtk_button_default_handler_new(
+      GTK_WIDGET(g->area),
+      0,
+      G_CALLBACK(_area_button_press_callback),
+      G_CALLBACK(_area_button_release_callback),
+      self);
+
+  // g_signal_connect(G_OBJECT(g->area), "button-press-event",
+  //                  G_CALLBACK(_area_button_press_callback), self);
+  // g_signal_connect(G_OBJECT(g->area), "button-release-event",
+  //                  G_CALLBACK(_area_button_release_callback), self);
+
   g_signal_connect(G_OBJECT(g->area), "motion-notify-event",
                    G_CALLBACK(_area_motion_notify_callback), self);
   g_signal_connect(G_OBJECT(g->area), "scroll-event",
