@@ -602,16 +602,22 @@ static gboolean _area_motion_notify_callback(GtkWidget *widget,
   return TRUE;
 }
 
-static gboolean _area_button_press_callback(GtkWidget *widget,
-                                            GdkEventButton *event,
-                                            dt_iop_module_t *self)
+static void _area_button_press_callback(
+    GtkGesture *gesture,
+    int n_press,
+    double x,
+    double y,
+    dt_iop_module_t *self)
 {
+  GdkEventButton *event = (GdkEventButton *)gtk_gesture_get_last_event(GTK_GESTURE(gesture), NULL);
+
   // set active point
   if(event->button == 1)
   {
     if(darktable.develop->gui_module != self) dt_iop_request_focus(self);
 
     if(event->type == GDK_2BUTTON_PRESS)
+    // if(n_press == 2)
     {
       _turn_selregion_picker_off(self);
 
@@ -636,22 +642,23 @@ static gboolean _area_button_press_callback(GtkWidget *widget,
       dt_iop_rgblevels_gui_data_t *g = self->gui_data;
       g->dragging = 1;
     }
-    return TRUE;
   }
-  return FALSE;
 }
 
-static gboolean _area_button_release_callback(GtkWidget *widget,
-                                              GdkEventButton *event,
-                                              dt_iop_module_t *self)
+static void _area_button_release_callback(
+    GtkGesture *gesture,
+    int n_press,
+    double x,
+    double y,
+    dt_iop_module_t *self)
 {
+  GdkEventButton *event = (GdkEventButton *)gtk_gesture_get_last_event(GTK_GESTURE(gesture), NULL);
+
   if(event->button == 1)
   {
     dt_iop_rgblevels_gui_data_t *g = self->gui_data;
     g->dragging = 0;
-    return TRUE;
   }
-  return FALSE;
 }
 
 static gboolean _area_scroll_callback(GtkWidget *widget,
@@ -1060,10 +1067,14 @@ void gui_init(dt_iop_module_t *self)
                                 "operates on L channel."));
   g_signal_connect(G_OBJECT(g->area), "draw",
                    G_CALLBACK(_area_draw_callback), self);
-  g_signal_connect(G_OBJECT(g->area), "button-press-event",
-                   G_CALLBACK(_area_button_press_callback), self);
-  g_signal_connect(G_OBJECT(g->area), "button-release-event",
-                   G_CALLBACK(_area_button_release_callback), self);
+
+  dtgtk_button_default_handler_new(
+      GTK_WIDGET(g->area),
+      0,
+      G_CALLBACK(_area_button_press_callback),
+      G_CALLBACK(_area_button_release_callback),
+      self);
+
   g_signal_connect(G_OBJECT(g->area), "motion-notify-event",
                    G_CALLBACK(_area_motion_notify_callback), self);
   g_signal_connect(G_OBJECT(g->area), "leave-notify-event",
