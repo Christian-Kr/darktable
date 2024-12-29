@@ -514,10 +514,16 @@ static void _remove_sample_cb(GtkButton *widget,
   dt_dev_invalidate_all(darktable.develop);
 }
 
-static gboolean _live_sample_button(GtkWidget *widget,
-                                    GdkEventButton *event,
-                                    dt_colorpicker_sample_t *sample)
+static void _live_sample_button(
+    GtkGesture *gesture,
+    int n_press,
+    double x,
+    double y,
+    dt_colorpicker_sample_t *sample)
 {
+  GtkWidget *widget = gtk_event_controller_get_widget(GTK_EVENT_CONTROLLER(gesture));
+  GdkEventButton *event = (GdkEventButton *)gtk_gesture_get_last_event(GTK_GESTURE(gesture), NULL);
+
   if(event->button == 1)
   {
     sample->locked = !sample->locked;
@@ -585,7 +591,6 @@ static gboolean _live_sample_button(GtkWidget *widget,
     }
     dt_control_queue_redraw_center();
   }
-  return FALSE;
 }
 
 static void _add_sample(GtkButton *widget,
@@ -626,8 +631,14 @@ static void _add_sample(GtkButton *widget,
      _("hover to highlight sample on canvas,\n"
        "click to lock sample,\n"
        "right-click to load sample area into active color picker"));
-  g_signal_connect(G_OBJECT(sample->color_patch), "button-press-event",
-                   G_CALLBACK(_live_sample_button), sample);
+
+  dtgtk_button_default_handler_new(
+      GTK_WIDGET(sample->color_patch),
+      0,
+      G_CALLBACK(_live_sample_button),
+      NULL,
+      sample);
+
   g_signal_connect(G_OBJECT(sample->color_patch), "draw",
                    G_CALLBACK(_sample_draw_callback), sample);
 
