@@ -263,17 +263,18 @@ static void _update_picker_output(dt_lib_module_t *self)
                            darktable.lib->proxy.colorpicker.picker_proxy != NULL);
 }
 
-static gboolean _large_patch_toggle(GtkWidget *widget,
-                                    GdkEvent *event,
-                                    dt_lib_colorpicker_t *data)
+static void _large_patch_toggle(
+    GtkGesture *gesture,
+    int n_press,
+    double x,
+    double y,
+    dt_lib_colorpicker_t *data)
 {
   const gboolean show_large_patch = !dt_conf_get_bool("ui_last/colorpicker_large");
   dt_conf_set_bool("ui_last/colorpicker_large", show_large_patch);
 
   gtk_widget_set_visible(gtk_widget_get_parent(data->large_color_patch),
                          show_large_patch);
-
-  return FALSE;
 }
 
 static void _picker_button_toggled(GtkToggleButton *button,
@@ -753,8 +754,14 @@ void gui_init(dt_lib_module_t *self)
                         | GDK_LEAVE_NOTIFY_MASK);
   g_signal_connect(G_OBJECT(color_patch), "draw",
                    G_CALLBACK(_sample_draw_callback), &data->primary_sample);
-  g_signal_connect(G_OBJECT(color_patch), "button-press-event",
-                   G_CALLBACK(_large_patch_toggle), data);
+
+  dtgtk_button_default_handler_new(
+      GTK_WIDGET(color_patch),
+      0,
+      G_CALLBACK(_large_patch_toggle),
+      NULL,
+      data);
+
   g_signal_connect(G_OBJECT(color_patch), "enter-notify-event",
                    G_CALLBACK(_sample_enter_callback), &data->primary_sample);
   g_signal_connect(G_OBJECT(color_patch), "leave-notify-event",
@@ -815,8 +822,14 @@ void gui_init(dt_lib_module_t *self)
   data->primary_sample.color_patch = color_patch = gtk_drawing_area_new();
   gtk_widget_set_tooltip_text(color_patch, _("click to (un)hide large color patch"));
   gtk_widget_set_events(color_patch, GDK_BUTTON_PRESS_MASK);
-  g_signal_connect(G_OBJECT(color_patch), "button-press-event",
-                   G_CALLBACK(_large_patch_toggle), data);
+
+  dtgtk_button_default_handler_new(
+      GTK_WIDGET(color_patch),
+      0,
+      G_CALLBACK(_large_patch_toggle),
+      NULL,
+      data);
+
   g_signal_connect(G_OBJECT(color_patch), "draw",
                    G_CALLBACK(_sample_draw_callback), &data->primary_sample);
 
