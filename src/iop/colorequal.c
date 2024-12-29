@@ -3056,11 +3056,6 @@ void gui_init(dt_iop_module_t *self)
       G_CALLBACK(_area_button_release_callback),
       self);
 
-  // g_signal_connect(G_OBJECT(g->area), "button-press-event",
-  //                  G_CALLBACK(_area_button_press_callback), self);
-  // g_signal_connect(G_OBJECT(g->area), "button-release-event",
-  //                  G_CALLBACK(_area_button_release_callback), self);
-
   g_signal_connect(G_OBJECT(g->area), "motion-notify-event",
                    G_CALLBACK(_area_motion_notify_callback), self);
   g_signal_connect(G_OBJECT(g->area), "scroll-event",
