@@ -654,6 +654,11 @@ static void view_onButtonPressed(
     row_activated_with_event(GTK_TREE_VIEW(treeview), path, NULL, event, d);
 
     gtk_tree_path_free(path);
+
+    // stop event propagation
+    gtk_gesture_set_state(gesture, GTK_EVENT_SEQUENCE_CLAIMED);
+
+    return;
   }
 
   if(path)
@@ -673,6 +678,10 @@ static void view_onButtonPressed(
     view_popup_menu(treeview, event, d);
 
     if(path) gtk_tree_path_free(path);
+
+    // stop event propagation
+    gtk_gesture_set_state(gesture, GTK_EVENT_SEQUENCE_CLAIMED);
+
     return;
   }
 
@@ -686,6 +695,10 @@ static void view_onButtonPressed(
     row_activated_with_event(GTK_TREE_VIEW(treeview), path, NULL, event, d);
 
     if(path) gtk_tree_path_free(path);
+
+    // stop event propagation
+    gtk_gesture_set_state(gesture, GTK_EVENT_SEQUENCE_CLAIMED);
+
     return;
   }
 
