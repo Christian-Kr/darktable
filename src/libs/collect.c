@@ -3342,6 +3342,9 @@ static void popup_button_callback(
   gtk_widget_show_all(GTK_WIDGET(menu));
 
   gtk_menu_popup_at_pointer(GTK_MENU(menu), (GdkEvent *)event);
+
+  // stop event propagation
+  gtk_gesture_set_state(gesture, GTK_EVENT_SEQUENCE_CLAIMED);
 }
 
 static void view_set_click(gpointer instance,
