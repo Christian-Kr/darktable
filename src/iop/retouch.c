@@ -1242,12 +1242,18 @@ static gboolean rt_wdbar_leave_notify(GtkWidget *widget,
   return TRUE;
 }
 
-static gboolean rt_wdbar_button_press(GtkWidget *widget,
-                                      GdkEventButton *event,
-                                      dt_iop_module_t *self)
+static void rt_wdbar_button_press(
+    GtkGesture *gesture,
+    int n_press,
+    double x,
+    double y,
+    dt_iop_module_t *self)
 {
   if(darktable.gui->reset)
-    return TRUE;
+    return;
+
+  GtkWidget *widget = gtk_event_controller_get_widget(GTK_EVENT_CONTROLLER(gesture));
+  GdkEventButton *event = (GdkEventButton *)gtk_gesture_get_last_event(GTK_GESTURE(gesture), NULL);
 
   dt_iop_request_focus(self);
 
@@ -1278,20 +1284,23 @@ static gboolean rt_wdbar_button_press(GtkWidget *widget,
   }
 
   gtk_widget_queue_draw(g->wd_bar);
-  return TRUE;
 }
 
-static gboolean rt_wdbar_button_release(GtkWidget *widget,
-                                        GdkEventButton *event,
-                                        dt_iop_module_t *self)
+static void rt_wdbar_button_release(
+    GtkGesture *gesture,
+    int n_press,
+    double x,
+    double y,
+    dt_iop_module_t *self)
 {
+  GdkEventButton *event = (GdkEventButton *)gtk_gesture_get_last_event(GTK_GESTURE(gesture), NULL);
+
   dt_iop_retouch_gui_data_t *g = self->gui_data;
 
   if(event->button == 1)
     g->is_dragging = 0;
 
   gtk_widget_queue_draw(g->wd_bar);
-  return TRUE;
 }
 
 static gboolean rt_wdbar_scrolled(GtkWidget *widget,
@@ -2558,10 +2567,14 @@ void gui_init(dt_iop_module_t *self)
                    G_CALLBACK(rt_wdbar_motion_notify), self);
   g_signal_connect(G_OBJECT(g->wd_bar), "leave-notify-event",
                    G_CALLBACK(rt_wdbar_leave_notify), self);
-  g_signal_connect(G_OBJECT(g->wd_bar), "button-press-event",
-                   G_CALLBACK(rt_wdbar_button_press), self);
-  g_signal_connect(G_OBJECT(g->wd_bar), "button-release-event",
-                   G_CALLBACK(rt_wdbar_button_release), self);
+
+  dtgtk_button_default_handler_new(
+      GTK_WIDGET(g->wd_bar),
+      0,
+      G_CALLBACK(rt_wdbar_button_press),
+      G_CALLBACK(rt_wdbar_button_release),
+      self);
+
   g_signal_connect(G_OBJECT(g->wd_bar), "scroll-event",
                    G_CALLBACK(rt_wdbar_scrolled), self);
   gtk_widget_add_events(GTK_WIDGET(g->wd_bar),
