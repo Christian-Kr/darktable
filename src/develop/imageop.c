@@ -1000,7 +1000,7 @@ static void _gui_multiinstance_callback(
     double y,
     dt_iop_module_t *module)
 {
-  GtkButton *button = (GtkButton *)gtk_event_controller_get_widget(GTK_EVENT_CONTROLLER(gesture));
+  GtkButton *button = (!gesture) ? NULL : (GtkButton *)gtk_event_controller_get_widget(GTK_EVENT_CONTROLLER(gesture));
   GdkEventButton *event = (GdkEventButton *)gtk_gesture_get_last_event(GTK_GESTURE(gesture), NULL);
 
   if(event && event->button == 3)
@@ -2335,7 +2335,7 @@ static void _presets_popup_callback(
     double y,
     dt_iop_module_t *module)
 {
-  GtkWidget *button = gtk_event_controller_get_widget(GTK_EVENT_CONTROLLER(gesture));
+  GtkWidget *button = (!gesture) ? NULL : gtk_event_controller_get_widget(GTK_EVENT_CONTROLLER(gesture));
 
   const gboolean disabled = !module->default_enabled && module->hide_enable_button;
   if(disabled) return;
