@@ -3045,12 +3045,16 @@ static gboolean area_enter_leave_notify(GtkWidget *widget,
 }
 
 
-static gboolean area_button_press(GtkWidget *widget,
-                                  GdkEventButton *event,
-                                  dt_iop_module_t *self)
+static void area_button_press(
+    GtkGesture *gesture,
+    int n_press,
+    double x,
+    double y,
+    dt_iop_module_t *self)
 {
+  if(darktable.gui->reset) return;
 
-  if(darktable.gui->reset) return TRUE;
+  GdkEventButton *event = (GdkEventButton *)gtk_gesture_get_last_event(GTK_GESTURE(gesture), NULL);
 
   dt_iop_toneequalizer_gui_data_t *g = self->gui_data;
 
@@ -3079,7 +3083,7 @@ static gboolean area_button_press(GtkWidget *widget,
     // Redraw graph
     gtk_widget_queue_draw(GTK_WIDGET(g->area));
     dt_dev_add_history_item(darktable.develop, self, TRUE);
-    return TRUE;
+    return;
   }
   else if(event->button == 1)
   {
@@ -3092,13 +3096,13 @@ static gboolean area_button_press(GtkWidget *widget,
     {
       dt_dev_add_history_item(darktable.develop, self, TRUE);
     }
-    return TRUE;
+    return;
   }
 
   // Unlock the colour picker so we can display our own custom cursor
   dt_iop_color_picker_reset(self, TRUE);
 
-  return FALSE;
+  return;
 }
 
 
@@ -3156,12 +3160,17 @@ static gboolean area_motion_notify(GtkWidget *widget,
 }
 
 
-static gboolean area_button_release(GtkWidget *widget,
-                                    GdkEventButton *event,
-                                    dt_iop_module_t *self)
+static void area_button_release(
+    GtkGesture *gesture,
+    int n_press,
+    double x,
+    double y,
+    dt_iop_module_t *self)
 {
-  if(darktable.gui->reset) return TRUE;
-  if(!self->enabled) return FALSE;
+  if(darktable.gui->reset) return;
+  if(!self->enabled) return;
+
+  GdkEventButton *event = (GdkEventButton *)gtk_gesture_get_last_event(GTK_GESTURE(gesture), NULL);
 
   dt_iop_toneequalizer_gui_data_t *g = self->gui_data;
 
@@ -3183,10 +3192,10 @@ static gboolean area_button_release(GtkWidget *widget,
       g->area_dragging = FALSE;
       dt_iop_gui_leave_critical_section(self);
 
-      return TRUE;
+      return;
     }
   }
-  return FALSE;
+  return;
 }
 
 static gboolean area_scroll(GtkWidget *widget,
@@ -3197,19 +3206,20 @@ static gboolean area_scroll(GtkWidget *widget,
   return !dt_gui_ignore_scroll(event);
 }
 
-static gboolean notebook_button_press(GtkWidget *widget,
-                                      GdkEventButton *event,
-                                      dt_iop_module_t *self)
+static void notebook_button_press(
+    GtkGesture *gesture,
+    int n_press,
+    double x,
+    double y,
+    dt_iop_module_t *self)
 {
-  if(darktable.gui->reset) return TRUE;
+  if(darktable.gui->reset) return;
 
   // Give focus to module
   dt_iop_request_focus(self);
 
   // Unlock the colour picker so we can display our own custom cursor
   dt_iop_color_picker_reset(self, TRUE);
-
-  return FALSE;
 }
 
 GSList *mouse_actions(dt_iop_module_t *self)
@@ -3363,10 +3373,14 @@ void gui_init(dt_iop_module_t *self)
                         | GDK_ENTER_NOTIFY_MASK | GDK_LEAVE_NOTIFY_MASK);
   gtk_widget_set_can_focus(GTK_WIDGET(g->area), TRUE);
   g_signal_connect(G_OBJECT(g->area), "draw", G_CALLBACK(area_draw), self);
-  g_signal_connect(G_OBJECT(g->area), "button-press-event",
-                   G_CALLBACK(area_button_press), self);
-  g_signal_connect(G_OBJECT(g->area), "button-release-event",
-                   G_CALLBACK(area_button_release), self);
+
+  dtgtk_button_default_handler_new(
+      GTK_WIDGET(g->area),
+      0,
+      G_CALLBACK(area_button_press),
+      G_CALLBACK(area_button_release),
+      self);
+
   g_signal_connect(G_OBJECT(g->area), "leave-notify-event",
                    G_CALLBACK(area_enter_leave_notify), self);
   g_signal_connect(G_OBJECT(g->area), "enter-notify-event",
@@ -3498,8 +3512,13 @@ void gui_init(dt_iop_module_t *self)
   gtk_widget_show(gtk_notebook_get_nth_page(g->notebook, active_page));
   gtk_notebook_set_current_page(g->notebook, active_page);
 
-  g_signal_connect(G_OBJECT(g->notebook), "button-press-event",
-                   G_CALLBACK(notebook_button_press), self);
+  dtgtk_button_default_handler_new(
+      GTK_WIDGET(g->notebook),
+      0,
+      G_CALLBACK(notebook_button_press),
+      NULL,
+      self);
+
   gtk_box_pack_start(GTK_BOX(self->widget), GTK_WIDGET(g->notebook), FALSE, FALSE, 0);
 
   GtkWidget *hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
