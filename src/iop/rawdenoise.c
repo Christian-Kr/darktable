@@ -794,11 +794,19 @@ static gboolean rawdenoise_motion_notify(GtkWidget *widget, GdkEventMotion *even
   return TRUE;
 }
 
-static gboolean rawdenoise_button_press(GtkWidget *widget, GdkEventButton *event, dt_iop_module_t *self)
+static void rawdenoise_button_press(
+    GtkGesture *gesture,
+    int n_press,
+    double x,
+    double y,
+    dt_iop_module_t *self)
 {
+  GtkWidget *widget = gtk_event_controller_get_widget(GTK_EVENT_CONTROLLER(gesture));
+  GdkEventButton *event = (GdkEventButton *)gtk_gesture_get_last_event(GTK_GESTURE(gesture), NULL);
+
   dt_iop_rawdenoise_gui_data_t *g = self->gui_data;
   const int ch = g->channel;
-  if(event->button == 1 && event->type == GDK_2BUTTON_PRESS)
+  if(event->button == 1 && n_press == 2)
   {
     // reset current curve
     dt_iop_rawdenoise_params_t *p = self->params;
@@ -822,20 +830,23 @@ static gboolean rawdenoise_button_press(GtkWidget *widget, GdkEventButton *event
         = dt_draw_curve_calc_value(g->transition_curve, CLAMP(event->x - inset, 0, width) / (float)width);
     g->mouse_pick -= 1.0 - CLAMP(event->y - inset, 0, height) / (float)height;
     g->dragging = 1;
-    return TRUE;
   }
-  return FALSE;
 }
 
-static gboolean rawdenoise_button_release(GtkWidget *widget, GdkEventButton *event, dt_iop_module_t *self)
+static void rawdenoise_button_release(
+    GtkGesture *gesture,
+    int n_press,
+    double x,
+    double y,
+    dt_iop_module_t *self)
 {
+  GdkEventButton *event = (GdkEventButton *)gtk_gesture_get_last_event(GTK_GESTURE(gesture), NULL);
+
   if(event->button == 1)
   {
     dt_iop_rawdenoise_gui_data_t *g = self->gui_data;
     g->dragging = 0;
-    return TRUE;
   }
-  return FALSE;
 }
 
 static gboolean rawdenoise_leave_notify(GtkWidget *widget, GdkEventCrossing *event, dt_iop_module_t *self)
@@ -916,8 +927,14 @@ void gui_init(dt_iop_module_t *self)
   gtk_box_pack_start(GTK_BOX(box_raw), GTK_WIDGET(g->area), FALSE, FALSE, 0);
 
   g_signal_connect(G_OBJECT(g->area), "draw", G_CALLBACK(rawdenoise_draw), self);
-  g_signal_connect(G_OBJECT(g->area), "button-press-event", G_CALLBACK(rawdenoise_button_press), self);
-  g_signal_connect(G_OBJECT(g->area), "button-release-event", G_CALLBACK(rawdenoise_button_release), self);
+
+  dtgtk_button_default_handler_new(
+      GTK_WIDGET(g->area),
+      0,
+      G_CALLBACK(rawdenoise_button_press),
+      G_CALLBACK(rawdenoise_button_release),
+      self);
+
   g_signal_connect(G_OBJECT(g->area), "motion-notify-event", G_CALLBACK(rawdenoise_motion_notify), self);
   g_signal_connect(G_OBJECT(g->area), "leave-notify-event", G_CALLBACK(rawdenoise_leave_notify), self);
   g_signal_connect(G_OBJECT(g->area), "scroll-event", G_CALLBACK(rawdenoise_scrolled), self);
