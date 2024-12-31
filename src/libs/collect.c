@@ -601,17 +601,23 @@ static void view_popup_menu(GtkWidget *treeview,
   gtk_menu_popup_at_pointer(GTK_MENU(menu), (GdkEvent *)event);
 }
 
-static gboolean view_onButtonPressed(GtkWidget *treeview,
-                                     GdkEventButton *event,
-                                     dt_lib_collect_t *d)
+static void view_onButtonPressed(
+    GtkGesture *gesture,
+    int n_press,
+    double x,
+    double y,
+    dt_lib_collect_t *d)
 {
+  GtkWidget *treeview = gtk_event_controller_get_widget(GTK_EVENT_CONTROLLER(gesture));
+  GdkEventButton *event = (GdkEventButton *)gtk_gesture_get_last_event(GTK_GESTURE(gesture), NULL);
+
   /* Get tree path for row that was clicked */
   GtkTreePath *path = NULL;
   const gboolean get_path = gtk_tree_view_get_path_at_pos(GTK_TREE_VIEW(treeview),
                                                           (gint)event->x, (gint)event->y,
                                                           &path, NULL, NULL, NULL);
 
-  if(event->type == GDK_DOUBLE_BUTTON_PRESS || d->singleclick)
+  if(n_press == 2 || d->singleclick)
   {
     if(event->state == last_state && path)
     {
@@ -648,7 +654,6 @@ static gboolean view_onButtonPressed(GtkWidget *treeview,
     row_activated_with_event(GTK_TREE_VIEW(treeview), path, NULL, event, d);
 
     gtk_tree_path_free(path);
-    return TRUE;
   }
 
   if(path)
@@ -668,11 +673,11 @@ static gboolean view_onButtonPressed(GtkWidget *treeview,
     view_popup_menu(treeview, event, d);
 
     if(path) gtk_tree_path_free(path);
-    return TRUE;
+    return;
   }
 
   // case of a activation
-  if((!d->singleclick && event->type == GDK_2BUTTON_PRESS && event->button == 1)
+  if((!d->singleclick && n_press == 2 && event->button == 1)
      || (d->singleclick && event->type == GDK_BUTTON_PRESS && event->button == 1)
      || (!d->singleclick && event->type == GDK_BUTTON_PRESS && event->button == 1
          && (dt_modifier_is(event->state, GDK_SHIFT_MASK)
@@ -681,11 +686,10 @@ static gboolean view_onButtonPressed(GtkWidget *treeview,
     row_activated_with_event(GTK_TREE_VIEW(treeview), path, NULL, event, d);
 
     if(path) gtk_tree_path_free(path);
-    return TRUE;
+    return;
   }
 
   if(path) gtk_tree_path_free(path);
-  return FALSE;
 }
 
 static gboolean view_onPopupMenu(GtkWidget *treeview, dt_lib_collect_t *d)
@@ -3745,8 +3749,12 @@ void gui_init(dt_lib_module_t *self)
   d->view = view;
   gtk_tree_view_set_headers_visible(view, FALSE);
 
-  g_signal_connect(G_OBJECT(view), "button-press-event",
-                   G_CALLBACK(view_onButtonPressed), d);
+  dtgtk_button_default_handler_new(
+      GTK_WIDGET(view),
+      0,
+      G_CALLBACK(view_onButtonPressed),
+      NULL,
+      d);
 
   g_signal_connect(G_OBJECT(view), "popup-menu", G_CALLBACK(view_onPopupMenu), d);
 
