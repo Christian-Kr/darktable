@@ -1897,10 +1897,16 @@ static gboolean dt_iop_basecurve_motion_notify(GtkWidget *widget,
   return TRUE;
 }
 
-static gboolean dt_iop_basecurve_button_press(GtkWidget *widget,
-                                              GdkEventButton *event,
-                                              dt_iop_module_t *self)
+static void dt_iop_basecurve_button_press(
+    GtkGesture *gesture,
+    int n_press,
+    double,
+    double,
+    dt_iop_module_t *self)
 {
+  GtkWidget *widget = gtk_event_controller_get_widget(GTK_EVENT_CONTROLLER(gesture));
+  GdkEventButton *event = (GdkEventButton *)gtk_gesture_get_last_event(GTK_GESTURE(gesture), NULL);
+
   dt_iop_basecurve_params_t *p = self->params;
   const dt_iop_basecurve_params_t *const d = self->default_params;
   dt_iop_basecurve_gui_data_t *g = self->gui_data;
@@ -1968,9 +1974,8 @@ static gboolean dt_iop_basecurve_button_press(GtkWidget *widget,
           gtk_widget_queue_draw(GTK_WIDGET(g->area));
         }
       }
-      return TRUE;
     }
-    else if(event->type == GDK_2BUTTON_PRESS)
+    else if(n_press == 2)
     {
       // reset current curve
       p->basecurve_nodes[ch] = d->basecurve_nodes[ch];
@@ -1983,7 +1988,6 @@ static gboolean dt_iop_basecurve_button_press(GtkWidget *widget,
       g->selected = -2; // avoid motion notify re-inserting immediately.
       dt_dev_add_history_item_target(darktable.develop, self, TRUE, widget);
       gtk_widget_queue_draw(GTK_WIDGET(g->area));
-      return TRUE;
     }
   }
   else if(event->button == 3 && g->selected >= 0)
@@ -1994,7 +1998,7 @@ static gboolean dt_iop_basecurve_button_press(GtkWidget *widget,
       basecurve[g->selected].y = basecurve[g->selected].x = reset_value;
       gtk_widget_queue_draw(GTK_WIDGET(g->area));
       dt_dev_add_history_item_target(darktable.develop, self, TRUE, widget);
-      return TRUE;
+      return;
     }
 
     for(int k = g->selected; k < nodes - 1; k++)
@@ -2007,9 +2011,7 @@ static gboolean dt_iop_basecurve_button_press(GtkWidget *widget,
     p->basecurve_nodes[ch]--;
     gtk_widget_queue_draw(GTK_WIDGET(g->area));
     dt_dev_add_history_item_target(darktable.develop, self, TRUE, widget);
-    return TRUE;
   }
-  return FALSE;
 }
 
 static gboolean _move_point_internal(dt_iop_module_t *self,
@@ -2180,7 +2182,14 @@ void gui_init(dt_iop_module_t *self)
                                            | GDK_ENTER_NOTIFY_MASK | GDK_LEAVE_NOTIFY_MASK);
   gtk_widget_set_can_focus(GTK_WIDGET(g->area), TRUE);
   g_signal_connect(G_OBJECT(g->area), "draw", G_CALLBACK(dt_iop_basecurve_draw), self);
-  g_signal_connect(G_OBJECT(g->area), "button-press-event", G_CALLBACK(dt_iop_basecurve_button_press), self);
+
+  dtgtk_button_default_handler_new(
+      GTK_WIDGET(g->area),
+      0,
+      G_CALLBACK(dt_iop_basecurve_button_press),
+      NULL,
+      self);
+
   g_signal_connect(G_OBJECT(g->area), "motion-notify-event", G_CALLBACK(dt_iop_basecurve_motion_notify), self);
   g_signal_connect(G_OBJECT(g->area), "leave-notify-event", G_CALLBACK(dt_iop_basecurve_leave_notify), self);
   g_signal_connect(G_OBJECT(g->area), "scroll-event", G_CALLBACK(_scrolled), self);
