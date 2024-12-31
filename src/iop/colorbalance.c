@@ -1902,44 +1902,17 @@ void gui_init(dt_iop_module_t *self)
   GtkWidget *area = dtgtk_drawing_area_new_with_height(0);
   gtk_box_pack_start(GTK_BOX(hbox), area, TRUE, TRUE, 0);
 
-  //   gtk_widget_add_events(g->area,
-  //                         GDK_POINTER_MOTION_MASK |
-  //                         GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK | GDK_LEAVE_NOTIFY_MASK);
   g_signal_connect(G_OBJECT(area), "draw", G_CALLBACK(dt_iop_area_draw), self);
-  //   g_signal_connect (G_OBJECT (area), "button-press-event",
-  //                     G_CALLBACK (dt_iop_colorbalance_button_press), self);
-  //   g_signal_connect (G_OBJECT (area), "motion-notify-event",
-  //                     G_CALLBACK (dt_iop_colorbalance_motion_notify), self);
-  //   g_signal_connect (G_OBJECT (area), "leave-notify-event",
-  //                     G_CALLBACK (dt_iop_colorbalance_leave_notify), self);
 
   area = dtgtk_drawing_area_new_with_height(0);
   gtk_box_pack_start(GTK_BOX(hbox), area, TRUE, TRUE, 0);
 
-  //   gtk_widget_add_events(g->area,
-  //                         GDK_POINTER_MOTION_MASK |
-  //                         GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK | GDK_LEAVE_NOTIFY_MASK);
   g_signal_connect(G_OBJECT(area), "draw", G_CALLBACK(dt_iop_area_draw), self);
-  //   g_signal_connect (G_OBJECT (area), "button-press-event",
-  //                     G_CALLBACK (dt_iop_colorbalance_button_press), self);
-  //   g_signal_connect (G_OBJECT (area), "motion-notify-event",
-  //                     G_CALLBACK (dt_iop_colorbalance_motion_notify), self);
-  //   g_signal_connect (G_OBJECT (area), "leave-notify-event",
-  //                     G_CALLBACK (dt_iop_colorbalance_leave_notify), self);
 
   area = dtgtk_drawing_area_new_with_height(0);
   gtk_box_pack_start(GTK_BOX(hbox), area, TRUE, TRUE, 0);
 
-  //   gtk_widget_add_events(g->area,
-  //                         GDK_POINTER_MOTION_MASK |
-  //                         GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK | GDK_LEAVE_NOTIFY_MASK);
   g_signal_connect(G_OBJECT(area), "draw", G_CALLBACK(dt_iop_area_draw), self);
-//   g_signal_connect (G_OBJECT (area), "button-press-event",
-//                     G_CALLBACK (dt_iop_colorbalance_button_press), self);
-//   g_signal_connect (G_OBJECT (area), "motion-notify-event",
-//                     G_CALLBACK (dt_iop_colorbalance_motion_notify), self);
-//   g_signal_connect (G_OBJECT (area), "leave-notify-event",
-//                     G_CALLBACK (dt_iop_colorbalance_leave_notify), self);
 #endif
 
   g->main_label = dt_ui_section_label_new(""); // is set in _configure_slider_blocks
