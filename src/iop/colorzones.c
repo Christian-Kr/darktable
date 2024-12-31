@@ -1677,6 +1677,9 @@ static void _bottom_area_button_press_callback(
     g->offset_x = g->offset_y = 0.f;
 
     gtk_widget_queue_draw(GTK_WIDGET(g->area));
+
+    // stop event propagation
+    gtk_gesture_set_state(gesture, GTK_EVENT_SEQUENCE_CLAIMED);
   }
 }
 
@@ -2118,6 +2121,9 @@ static void _area_button_press_callback(
        && !dt_modifier_is(event->state, GDK_CONTROL_MASK))
     {
       g->dragging = 1;
+
+      // stop event propagation
+      gtk_gesture_set_state(gesture, GTK_EVENT_SEQUENCE_CLAIMED);
     }
     else if(event->type == GDK_BUTTON_PRESS
             && dt_modifier_is(event->state, GDK_CONTROL_MASK)
@@ -2178,6 +2184,9 @@ static void _area_button_press_callback(
         dt_dev_add_history_item_target(darktable.develop, self, TRUE, widget + ch);
         gtk_widget_queue_draw(GTK_WIDGET(g->area));
       }
+
+      // stop event propagation
+      gtk_gesture_set_state(gesture, GTK_EVENT_SEQUENCE_CLAIMED);
     }
     else if(n_press == 2)
     {
@@ -2218,6 +2227,10 @@ static void _area_button_press_callback(
       dt_iop_color_picker_reset(self, TRUE);
       gtk_widget_queue_draw(GTK_WIDGET(g->area));
       dt_dev_add_history_item_target(darktable.develop, self, TRUE, widget + ch);
+
+      // stop event propagation
+      gtk_gesture_set_state(gesture, GTK_EVENT_SEQUENCE_CLAIMED);
+
       return;
     }
 
@@ -2225,6 +2238,9 @@ static void _area_button_press_callback(
     _delete_node(self, curve, &p->curve_num_nodes[ch],
                  g->selected, dt_modifier_is(event->state, GDK_CONTROL_MASK));
     g->selected = -2; // avoid re-insertion of that point immediately after this
+
+    // stop event propagation
+    gtk_gesture_set_state(gesture, GTK_EVENT_SEQUENCE_CLAIMED);
   }
 }
 
@@ -2237,7 +2253,13 @@ static void _area_button_release_callback(
 {
   const GdkEventButton *event = (GdkEventButton *)gtk_gesture_get_last_event(GTK_GESTURE(gesture), NULL);
 
-  if(darktable.develop->darkroom_skip_mouse_events) return;
+  if(darktable.develop->darkroom_skip_mouse_events)
+  {
+    // stop event propagation
+    gtk_gesture_set_state(gesture, GTK_EVENT_SEQUENCE_CLAIMED);
+
+    return;
+  }
 
   if(event->button == 1)
   {
