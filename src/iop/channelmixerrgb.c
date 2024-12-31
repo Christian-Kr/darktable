@@ -2872,9 +2872,12 @@ static void _start_profiling_callback(GtkWidget *togglebutton, dt_iop_module_t *
   dt_control_queue_redraw_center();
 }
 
-static void _run_profile_callback(GtkWidget *widget,
-                                 GdkEventButton *event,
-                                 dt_iop_module_t *self)
+static void _run_profile_callback(
+    GtkGesture *gesture,
+    int n_press,
+    double x,
+    double y,
+    dt_iop_module_t *self)
 {
   if(darktable.gui->reset) return;
   dt_iop_channelmixer_rgb_gui_data_t *g = self->gui_data;
@@ -2886,9 +2889,12 @@ static void _run_profile_callback(GtkWidget *widget,
   dt_dev_reprocess_preview(self->dev);
 }
 
-static void _run_validation_callback(GtkWidget *widget,
-                                    GdkEventButton *event,
-                                    dt_iop_module_t *self)
+static void _run_validation_callback(
+    GtkGesture *gesture,
+    int n_press,
+    double x,
+    double y,
+    dt_iop_module_t *self)
 {
   if(darktable.gui->reset) return;
   dt_iop_channelmixer_rgb_gui_data_t *g = self->gui_data;
@@ -2900,9 +2906,12 @@ static void _run_validation_callback(GtkWidget *widget,
   dt_dev_reprocess_preview(self->dev);
 }
 
-static void _commit_profile_callback(GtkWidget *widget,
-                                     GdkEventButton *event,
-                                     dt_iop_module_t *self)
+static void _commit_profile_callback(
+    GtkGesture *gesture,
+    int n_press,
+    double x,
+    double y,
+    dt_iop_module_t *self)
 {
   if(darktable.gui->reset) return;
   dt_iop_channelmixer_rgb_gui_data_t *g = self->gui_data;
@@ -4727,8 +4736,14 @@ void gui_init(dt_iop_module_t *self)
   g->button_commit = dtgtk_button_new(dtgtk_cairo_paint_check_mark, 0, NULL);
   dt_action_define_iop(self, N_("calibrate"), N_("accept"),
                        g->button_commit, &dt_action_def_button);
-  g_signal_connect(G_OBJECT(g->button_commit), "button-press-event",
-                   G_CALLBACK(_commit_profile_callback), (gpointer)self);
+
+  dtgtk_button_default_handler_new(
+      GTK_WIDGET(g->button_commit),
+      0,
+      G_CALLBACK(_commit_profile_callback),
+      NULL,
+      self);
+
   gtk_box_pack_end(GTK_BOX(toolbar), GTK_WIDGET(g->button_commit), FALSE, FALSE, 0);
   gtk_widget_set_tooltip_text(g->button_commit,
                               _("accept the computed profile and set it in the module"));
@@ -4736,16 +4751,28 @@ void gui_init(dt_iop_module_t *self)
   g->button_profile = dtgtk_button_new(dtgtk_cairo_paint_refresh, 0, NULL);
   dt_action_define_iop(self, N_("calibrate"), N_("recompute"),
                        g->button_profile, &dt_action_def_button);
-  g_signal_connect(G_OBJECT(g->button_profile), "button-press-event",
-                   G_CALLBACK(_run_profile_callback), (gpointer)self);
+
+  dtgtk_button_default_handler_new(
+      GTK_WIDGET(g->button_profile),
+      0,
+      G_CALLBACK(_run_profile_callback),
+      NULL,
+      self);
+
   gtk_widget_set_tooltip_text(g->button_profile, _("recompute the profile"));
   gtk_box_pack_end(GTK_BOX(toolbar), GTK_WIDGET(g->button_profile), FALSE, FALSE, 0);
 
   g->button_validate = dtgtk_button_new(dtgtk_cairo_paint_softproof, 0, NULL);
   dt_action_define_iop(self, N_("calibrate"), N_("validate"),
                        g->button_validate, &dt_action_def_button);
-  g_signal_connect(G_OBJECT(g->button_validate), "button-press-event",
-                   G_CALLBACK(_run_validation_callback), (gpointer)self);
+
+  dtgtk_button_default_handler_new(
+      GTK_WIDGET(g->button_validate),
+      0,
+      G_CALLBACK(_run_validation_callback),
+      NULL,
+      self);
+
   gtk_widget_set_tooltip_text(g->button_validate, _("check the output delta E"));
   gtk_box_pack_end(GTK_BOX(toolbar), GTK_WIDGET(g->button_validate), FALSE, FALSE, 0);
 
