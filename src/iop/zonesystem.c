@@ -407,10 +407,18 @@ static gboolean dt_iop_zonesystem_bar_motion_notify(GtkWidget *widget, GdkEventM
                                                     dt_iop_module_t *self);
 static gboolean dt_iop_zonesystem_bar_leave_notify(GtkWidget *widget, GdkEventCrossing *event,
                                                    dt_iop_module_t *self);
-static gboolean dt_iop_zonesystem_bar_button_press(GtkWidget *widget, GdkEventButton *event,
-                                                   dt_iop_module_t *self);
-static gboolean dt_iop_zonesystem_bar_button_release(GtkWidget *widget, GdkEventButton *event,
-                                                     dt_iop_module_t *self);
+static void dt_iop_zonesystem_bar_button_press(
+    GtkGesture *gesture,
+    int n_press,
+    double x,
+    double y,
+    dt_iop_module_t *self);
+static void dt_iop_zonesystem_bar_button_release(
+    GtkGesture *gesture,
+    int n_press,
+    double x,
+    double y,
+    dt_iop_module_t *self);
 static gboolean dt_iop_zonesystem_bar_scrolled(GtkWidget *widget, GdkEventScroll *event,
                                                dt_iop_module_t *self);
 
@@ -466,10 +474,14 @@ void gui_init(dt_iop_module_t *self)
                    self);
   g_signal_connect(G_OBJECT(g->zones), "leave-notify-event", G_CALLBACK(dt_iop_zonesystem_bar_leave_notify),
                    self);
-  g_signal_connect(G_OBJECT(g->zones), "button-press-event", G_CALLBACK(dt_iop_zonesystem_bar_button_press),
-                   self);
-  g_signal_connect(G_OBJECT(g->zones), "button-release-event",
-                   G_CALLBACK(dt_iop_zonesystem_bar_button_release), self);
+
+  dtgtk_button_default_handler_new(
+      GTK_WIDGET(g->zones),
+      0,
+      G_CALLBACK(dt_iop_zonesystem_bar_button_press),
+      G_CALLBACK(dt_iop_zonesystem_bar_button_release),
+      self);
+
   g_signal_connect(G_OBJECT(g->zones), "scroll-event", G_CALLBACK(dt_iop_zonesystem_bar_scrolled), self);
   gtk_widget_add_events(GTK_WIDGET(g->zones), GDK_POINTER_MOTION_MASK
                                               | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK
@@ -597,9 +609,16 @@ static gboolean dt_iop_zonesystem_bar_draw(GtkWidget *widget, cairo_t *crf, dt_i
   return TRUE;
 }
 
-static gboolean dt_iop_zonesystem_bar_button_press(GtkWidget *widget, GdkEventButton *event,
-                                                   dt_iop_module_t *self)
+static void dt_iop_zonesystem_bar_button_press(
+    GtkGesture *gesture,
+    int n_press,
+    double x,
+    double y,
+    dt_iop_module_t *self)
 {
+  GtkWidget *widget = gtk_event_controller_get_widget(GTK_EVENT_CONTROLLER(gesture));
+  GdkEventButton *event = (GdkEventButton *)gtk_gesture_get_last_event(GTK_GESTURE(gesture), NULL);
+
   dt_iop_zonesystem_params_t *p = self->params;
   dt_iop_zonesystem_gui_data_t *g = self->gui_data;
   const int inset = DT_ZONESYSTEM_INSET;
@@ -633,19 +652,22 @@ static gboolean dt_iop_zonesystem_bar_button_press(GtkWidget *widget, GdkEventBu
     p->zone[k] = -1;
     dt_dev_add_history_item(darktable.develop, self, TRUE);
   }
-
-  return TRUE;
 }
 
-static gboolean dt_iop_zonesystem_bar_button_release(GtkWidget *widget, GdkEventButton *event,
-                                                     dt_iop_module_t *self)
+static void dt_iop_zonesystem_bar_button_release(
+    GtkGesture *gesture,
+    int n_press,
+    double x,
+    double y,
+    dt_iop_module_t *self)
 {
+  GdkEventButton *event = (GdkEventButton *)gtk_gesture_get_last_event(GTK_GESTURE(gesture), NULL);
+
   dt_iop_zonesystem_gui_data_t *g = self->gui_data;
   if(event->button == 1)
   {
     g->is_dragging = FALSE;
   }
-  return TRUE;
 }
 
 static gboolean dt_iop_zonesystem_bar_scrolled(GtkWidget *widget, GdkEventScroll *event, dt_iop_module_t *self)
