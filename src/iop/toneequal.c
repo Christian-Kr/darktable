@@ -3052,7 +3052,13 @@ static void area_button_press(
     double y,
     dt_iop_module_t *self)
 {
-  if(darktable.gui->reset) return;
+  if(darktable.gui->reset)
+  {
+    // stop event propagation
+    gtk_gesture_set_state(gesture, GTK_EVENT_SEQUENCE_CLAIMED);
+
+    return;
+  }
 
   GdkEventButton *event = (GdkEventButton *)gtk_gesture_get_last_event(GTK_GESTURE(gesture), NULL);
 
@@ -3083,6 +3089,10 @@ static void area_button_press(
     // Redraw graph
     gtk_widget_queue_draw(GTK_WIDGET(g->area));
     dt_dev_add_history_item(darktable.develop, self, TRUE);
+
+    // stop event propagation
+    gtk_gesture_set_state(gesture, GTK_EVENT_SEQUENCE_CLAIMED);
+
     return;
   }
   else if(event->button == 1)
@@ -3096,13 +3106,15 @@ static void area_button_press(
     {
       dt_dev_add_history_item(darktable.develop, self, TRUE);
     }
+
+    // stop event propagation
+    gtk_gesture_set_state(gesture, GTK_EVENT_SEQUENCE_CLAIMED);
+
     return;
   }
 
   // Unlock the colour picker so we can display our own custom cursor
   dt_iop_color_picker_reset(self, TRUE);
-
-  return;
 }
 
 
@@ -3167,7 +3179,14 @@ static void area_button_release(
     double y,
     dt_iop_module_t *self)
 {
-  if(darktable.gui->reset) return;
+  if(darktable.gui->reset)
+  {
+    // stop event propagation
+    gtk_gesture_set_state(gesture, GTK_EVENT_SEQUENCE_CLAIMED);
+
+    return;
+  }
+
   if(!self->enabled) return;
 
   GdkEventButton *event = (GdkEventButton *)gtk_gesture_get_last_event(GTK_GESTURE(gesture), NULL);
@@ -3192,10 +3211,10 @@ static void area_button_release(
       g->area_dragging = FALSE;
       dt_iop_gui_leave_critical_section(self);
 
-      return;
+      // stop event propagation
+      gtk_gesture_set_state(gesture, GTK_EVENT_SEQUENCE_CLAIMED);
     }
   }
-  return;
 }
 
 static gboolean area_scroll(GtkWidget *widget,
@@ -3213,7 +3232,13 @@ static void notebook_button_press(
     double y,
     dt_iop_module_t *self)
 {
-  if(darktable.gui->reset) return;
+  if(darktable.gui->reset)
+  {
+    // stop event propagation
+    gtk_gesture_set_state(gesture, GTK_EVENT_SEQUENCE_CLAIMED);
+
+    return;
+  }
 
   // Give focus to module
   dt_iop_request_focus(self);
