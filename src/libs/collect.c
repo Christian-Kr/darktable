@@ -3254,12 +3254,17 @@ static void menuitem_clear(GtkMenuItem *menuitem,
                              DT_COLLECTION_PROP_UNDEF, NULL);
 }
 
-static gboolean popup_button_callback(GtkWidget *widget,
-                                      GdkEventButton *event,
-                                      dt_lib_collect_rule_t *d)
+static void popup_button_callback(
+    GtkGesture *gesture,
+    int n_press,
+    double x,
+    double y,
+    dt_lib_collect_rule_t *d)
 {
+  GdkEventButton *event = (GdkEventButton *)gtk_gesture_get_last_event(GTK_GESTURE(gesture), NULL);
+
   if(event->button != 1)
-    return FALSE;
+    return;
 
   GtkWidget *menu = gtk_menu_new();
   GtkWidget *mi;
@@ -3320,8 +3325,6 @@ static gboolean popup_button_callback(GtkWidget *widget,
   gtk_widget_show_all(GTK_WIDGET(menu));
 
   gtk_menu_popup_at_pointer(GTK_MENU(menu), (GdkEvent *)event);
-
-  return TRUE;
 }
 
 static void view_set_click(gpointer instance,
@@ -3726,8 +3729,14 @@ void gui_init(dt_lib_module_t *self)
     dt_gui_add_class(GTK_WIDGET(w), "dt_big_btn_canvas");
     d->rule[i].button = w;
     gtk_widget_set_events(w, GDK_BUTTON_PRESS_MASK);
-    g_signal_connect(G_OBJECT(w), "button-press-event",
-                     G_CALLBACK(popup_button_callback), d->rule + i);
+
+    dtgtk_button_default_handler_new(
+        GTK_WIDGET(w),
+        0,
+        G_CALLBACK(popup_button_callback),
+        NULL,
+        d->rule + i);
+
     gtk_box_pack_start(box, w, FALSE, FALSE, 0);
   }
 
@@ -3735,8 +3744,10 @@ void gui_init(dt_lib_module_t *self)
   d->view_rule = -1;
   d->view = view;
   gtk_tree_view_set_headers_visible(view, FALSE);
+
   g_signal_connect(G_OBJECT(view), "button-press-event",
                    G_CALLBACK(view_onButtonPressed), d);
+
   g_signal_connect(G_OBJECT(view), "popup-menu", G_CALLBACK(view_onPopupMenu), d);
 
   GtkTreeViewColumn *col = gtk_tree_view_column_new();
