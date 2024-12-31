@@ -993,19 +993,25 @@ void _get_multi_show(dt_iop_module_t *module,
     multi_show->down = 0;
 }
 
-static gboolean _gui_multiinstance_callback(GtkButton *button,
-                                            GdkEventButton *event,
-                                            dt_iop_module_t *module)
+static void _gui_multiinstance_callback(
+    GtkGesture *gesture,
+    int n_press,
+    double x,
+    double y,
+    dt_iop_module_t *module)
 {
+  GtkButton *button = (GtkButton *)gtk_event_controller_get_widget(GTK_EVENT_CONTROLLER(gesture));
+  GdkEventButton *event = (GdkEventButton *)gtk_gesture_get_last_event(GTK_GESTURE(gesture), NULL);
+
   if(event && event->button == 3)
   {
     if(!(module->flags() & IOP_FLAGS_ONE_INSTANCE))
       _gui_copy_callback(button, module);
-    return TRUE;
+    return;
   }
   else if(event && event->button == 2)
   {
-    return FALSE;
+    return;
   }
 
   dt_iop_gui_multi_show_t multi_show;
@@ -1064,14 +1070,17 @@ static gboolean _gui_multiinstance_callback(GtkButton *button,
   // make sure the button is deactivated now that the menu is opened
   if(button)
     dtgtk_button_set_active(DTGTK_BUTTON(button), FALSE);
-
-  return TRUE;
 }
 
-static gboolean _gui_off_button_press(GtkButton *w,
-                                      GdkEventButton *e,
-                                      dt_iop_module_t *module)
+static void _gui_off_button_press(
+    GtkGesture *gesture,
+    int n_press,
+    double x,
+    double y,
+    dt_iop_module_t *module)
 {
+  GdkEventButton *e = (GdkEventButton *)gtk_gesture_get_last_event(GTK_GESTURE(gesture), NULL);
+
   if(module->operation_tags() & IOP_TAG_DISTORT)
   {
     DT_CONTROL_SIGNAL_RAISE(DT_SIGNAL_DEVELOP_DISTORT);
@@ -1080,10 +1089,7 @@ static gboolean _gui_off_button_press(GtkButton *w,
   if(!darktable.gui->reset && dt_modifier_is(e->state, GDK_CONTROL_MASK))
   {
     dt_iop_request_focus(dt_dev_gui_module() == module ? NULL : module);
-    return TRUE;
   }
-
-  return FALSE;
 }
 
 static void _gui_off_callback(GtkToggleButton *togglebutton,
@@ -2273,13 +2279,13 @@ void dt_iop_gui_reset(dt_iop_module_t *module)
   --darktable.gui->reset;
 }
 
-static gboolean _gui_reset_callback(GtkButton *button,
-                                    GdkEventButton *event,
-                                    dt_iop_module_t *module)
+static void _gui_reset(
+    const GdkEventButton *event,
+    dt_iop_module_t *module)
 {
   // never use the callback if module is always disabled
   const gboolean disabled = !module->default_enabled && module->hide_enable_button;
-  if(disabled) return FALSE;
+  if(disabled) return;
 
   // Ctrl is used to apply any auto-presets to the current module
   // If Ctrl was not pressed, or no auto-presets were applied, reset the module parameters
@@ -2309,16 +2315,30 @@ static gboolean _gui_reset_callback(GtkButton *button,
 
   // rebuild the accelerators
   dt_iop_connect_accels_multi(module->so);
-
-  return TRUE;
 }
 
-static gboolean _presets_popup_callback(GtkButton *button,
-                                        GdkEventButton *event,
-                                        dt_iop_module_t *module)
+static void _gui_reset_callback(
+    GtkGesture *gesture,
+    int n_press,
+    double x,
+    double y,
+    dt_iop_module_t *module)
 {
+  GdkEventButton *event = (GdkEventButton *)gtk_gesture_get_last_event(GTK_GESTURE(gesture), NULL);
+  _gui_reset(event, module);
+}
+
+static void _presets_popup_callback(
+    GtkGesture *gesture,
+    int n_press,
+    double x,
+    double y,
+    dt_iop_module_t *module)
+{
+  GtkWidget *button = gtk_event_controller_get_widget(GTK_EVENT_CONTROLLER(gesture));
+
   const gboolean disabled = !module->default_enabled && module->hide_enable_button;
-  if(disabled) return FALSE;
+  if(disabled) return;
 
   GtkMenu *menu = dt_gui_presets_popup_menu_show_for_module(module);
 
@@ -2327,8 +2347,6 @@ static gboolean _presets_popup_callback(GtkButton *button,
 
   dt_gui_menu_popup(menu,
                     GTK_WIDGET(button), GDK_GRAVITY_SOUTH_EAST, GDK_GRAVITY_NORTH_EAST);
-
-  return TRUE;
 }
 
 static gboolean _presets_scroll_callback(GtkWidget *widget,
@@ -2523,23 +2541,24 @@ void dt_iop_gui_update_expanded(dt_iop_module_t *module)
   dtgtk_expander_set_expanded(DTGTK_EXPANDER(module->expander), expanded);
 }
 
-static gboolean _iop_plugin_body_button_press(GtkWidget *w,
-                                              GdkEventButton *e,
-                                              gpointer user_data)
+static void _iop_plugin_body_button_press(
+    GtkGesture *gesture,
+    int n_press,
+    double x,
+    double y,
+    gpointer user_data)
 {
+  const GdkEventButton *e = (GdkEventButton *)gtk_gesture_get_last_event(GTK_GESTURE(gesture), NULL);
+
   dt_iop_module_t *module = (dt_iop_module_t *)user_data;
   if(e->button == 1)
   {
     dt_iop_request_focus(module);
-    return TRUE;
   }
   else if(e->button == 3)
   {
-    _presets_popup_callback(NULL, NULL, module);
-
-    return TRUE;
+    _presets_popup_callback(NULL, 0, 0, 0, module);
   }
-  return FALSE;
 }
 
 static gboolean _iop_plugin_header_button_release(GtkWidget *w,
@@ -2579,7 +2598,7 @@ static gboolean _iop_plugin_header_button_release(GtkWidget *w,
   }
   else if(e->button == 3)
   {
-    _presets_popup_callback(NULL, NULL, module);
+    _presets_popup_callback(NULL, 0, 0, 0, module);
 
     return TRUE;
   }
@@ -2999,7 +3018,14 @@ GtkWidget *dt_iop_gui_header_button(dt_iop_module_t *module,
   g_signal_connect(button, "enter-notify-event",
                    G_CALLBACK(_header_enter_notify_callback),
                    GINT_TO_POINTER(element));
-  g_signal_connect(button, "button-press-event", G_CALLBACK(callback), module);
+
+  dtgtk_button_default_handler_new(
+      GTK_WIDGET(button),
+      0,
+      G_CALLBACK(callback),
+      NULL,
+      module);
+
   dt_action_define(&module->so->actions, NULL, NULL, button, NULL);
   gtk_widget_show(button);
 
@@ -3115,8 +3141,14 @@ void dt_iop_gui_set_expander(dt_iop_module_t *module)
                    G_CALLBACK(_header_motion_notify_hide_callback), module);
 
   /* connect mouse button callbacks for focus and presets */
-  g_signal_connect(G_OBJECT(body_evb), "button-press-event",
-                   G_CALLBACK(_iop_plugin_body_button_press), module);
+
+  dtgtk_button_default_handler_new(
+      GTK_WIDGET(body_evb),
+      0,
+      G_CALLBACK(_iop_plugin_body_button_press),
+      NULL,
+      module);
+
   gtk_widget_add_events(body_evb, GDK_POINTER_MOTION_MASK);
   g_signal_connect(G_OBJECT(body_evb), "enter-notify-event",
                    G_CALLBACK(_header_motion_notify_show_callback), module);
@@ -3921,14 +3953,14 @@ static float _action_process(gpointer target,
         _gui_delete_callback   (NULL, module);
       else if(effect == DT_ACTION_EFFECT_RENAME                               )
         _gui_rename_callback   (NULL, module);
-      else _gui_multiinstance_callback(NULL, NULL, module);
+      else _gui_multiinstance_callback(NULL, 0, 0, 0, module);
       break;
     case DT_ACTION_ELEMENT_RESET:
       {
         GdkEventButton event = { .state = (effect == DT_ACTION_EFFECT_ACTIVATE_CTRL
                                            ? GDK_CONTROL_MASK
                                            : 0) };
-        _gui_reset_callback(NULL, &event, module);
+        _gui_reset(&event, module);
       }
       break;
     case DT_ACTION_ELEMENT_PRESETS:
@@ -3936,7 +3968,7 @@ static float _action_process(gpointer target,
       {
       case DT_ACTION_EFFECT_ACTIVATE:
         if(module->presets_button)
-          _presets_popup_callback(NULL, NULL, module);
+          _presets_popup_callback(NULL, 0, 0, 0, module);
         break;
       case DT_ACTION_EFFECT_NEXT:
         move_size *= -1;
