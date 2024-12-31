@@ -1264,10 +1264,16 @@ static gboolean _menuitem_motion_preset(GtkMenuItem *menuitem,
   return FALSE;
 }
 
-static gboolean _menuitem_button_preset(GtkMenuItem *menuitem,
-                                        GdkEventButton *event,
-                                        dt_iop_module_t *module)
+static void _menuitem_button_preset(
+    GtkGesture *gesture,
+    int n_press,
+    double x,
+    double y,
+    dt_iop_module_t *module)
 {
+  GtkWidget *menuitem = gtk_event_controller_get_widget(GTK_EVENT_CONTROLLER(gesture));
+  GdkEventButton *event = (GdkEventButton *)gtk_gesture_get_last_event(GTK_GESTURE(gesture), NULL);
+
   gboolean long_click = dt_gui_long_click(event->time, _click_time);
 
   gchar *name = g_object_get_data(G_OBJECT(menuitem), "dt-preset-name");
@@ -1305,7 +1311,6 @@ static gboolean _menuitem_button_preset(GtkMenuItem *menuitem,
   }
 
   _click_time = event->type == GDK_BUTTON_PRESS ? event->time : G_MAXUINT;
-  return long_click; // keep menu open on long click
 }
 
 // need to catch "activate" signal as well to handle keyboard
@@ -1327,10 +1332,14 @@ static void _menuitem_connect_preset(GtkWidget *mi,
   g_object_set_data(G_OBJECT(mi), "dt-preset-module", iop);
   g_signal_connect(G_OBJECT(mi), "activate",
                    G_CALLBACK(_menuitem_activate_preset), iop);
-  g_signal_connect(G_OBJECT(mi), "button-press-event",
-                   G_CALLBACK(_menuitem_button_preset), iop);
-  g_signal_connect(G_OBJECT(mi), "button-release-event",
-                   G_CALLBACK(_menuitem_button_preset), iop);
+
+  dtgtk_button_default_handler_new(
+      GTK_WIDGET(mi),
+      0,
+      G_CALLBACK(_menuitem_button_preset),
+      G_CALLBACK(_menuitem_button_preset),
+      iop);
+
   g_signal_connect(G_OBJECT(mi), "motion-notify-event",
                    G_CALLBACK(_menuitem_motion_preset), iop);
   gtk_widget_set_has_tooltip(mi, TRUE);
